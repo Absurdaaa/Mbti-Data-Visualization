@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis for ESFJ Words</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>  
+    <style>
+        .chart-container {
+            width: 100%;
+            height: 250px;
+        }
+
+        .bar {
+            font-size: inherit;
+        }
+
+        .axis-label {
+            font-size: 12px;
+            text-anchor: middle;
+        }
+
+        /* Tooltip styles */
+        #tooltip {
+            position: absolute;
+            visibility: hidden;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            padding: 5px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Legend container */
+        .legend {
+            margin-top: 100px;
+            text-align: center;
+        }
+
+        /* Drag handle style */
+        .drag-handle {
+            fill: #333;
+            cursor: pointer;
+            stroke: #fff;
+            stroke-width: 1px;
+        }
+
+        .legend-bar {
+            height: 20px;
+        }
+
+        .legend-text {
+            font-size: 12px;
+            text-anchor: middle;
+        }
+
+        /* Tooltip for the legend */
+        .legend-tooltip {
+            position: absolute;
+            visibility: hidden;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <svg id="bar-chart" width="780" height="400"></svg>
+    </div>
+    <div class="legend">
+        <svg id="legend" width="750" height="50"></svg>
+        <div id="legend-tooltip" class="legend-tooltip"></div>
+    </div>
+    <div id="tooltip" style="position: absolute; visibility: hidden; background-color: #f9f9f9; border: 1px solid #ccc; padding: 5px;"></div>
+
+    <script>
+        // Data
+        const sentimentScores = [
+        0.1977401129943503,
+        0.1941747572815534,
+        0.19158878504672897,
+        0.62049164124531541,
+        0.1598173515981735,
+        0.3375796178343949,
+        0.22119815668202766,
+        0.22857142857142856,
+        0.6666666666666666,
+        0.24113475177304963,
+        0.059880239520958084,
+        0.18811881188118812,
+        0.43564356435643564,
+        0.19724770642201836,
+        0.3387096774193548,
+        0.5,
+        0.34375,
+        0.34615384615384615,
+        0.69,
+        
+        ];
+
+        const words = [
+         "like",
+                "think",
+                "people",
+                "esfj",
+                "know",
+                "really",
+                "get",
+                "feel",
+                "love",
+                "lot",
+                "type",
+                
+                "things",
+                "good",
+                "time",
+                "make",
+                "always",
+                "find",
+                
+                "even",
+                "intp",
+                
+        ];
+
+        const margin = { top: 100, right: 20, bottom: 80, left: 60 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Create SVG container for the main chart
+        const svg = d3.select("#bar-chart")
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Scale for the x-axis (Words)
+        const xScale = d3.scaleBand()
+            .domain(words)
+            .range([0, width])
+            .padding(0.1);
+
+        // Scale for the y-axis (Sentiment Scores)
+        const yScale = d3.scaleLinear()
+            .domain([0, d3.max(sentimentScores)])
+            .nice()
+            .range([height, 0]);
+
+        // Create color scale for the bars based on sentiment score (-1 to 1)
+        const colorScale = d3.scaleLinear()
+            .domain([-1, 1])
+            .range(["#BAEAFF", "#E15457"]);
+
+        // X axis
+        svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(xScale).tickSize(0).tickPadding(10))
+        .selectAll("text")
+        .style("text-anchor", "middle")
+        .style("font-family", "Arial, sans-serif")  // Ensure same font as the default
+        .style("font-size", "12px")
+        .html(function(d) {
+            if (d === "something") {
+                // Split "something" into two lines: "some" and "thing"
+                return "<tspan x='0' dy='0'>some</tspan><tspan x='0' dy='1.2em'>thing</tspan>";
+            } else if (d === "someone") {
+                // Split "someone" into two lines: "some" and "one"
+                return "<tspan x='0' dy='0'>some</tspan><tspan x='0' dy='1.2em'>one</tspan>";
+            } else if (d === "actually") {
+                // Split "actually" into two lines: "act" and "ually"
+                return "<tspan x='0' dy='0'>act</tspan><tspan x='0' dy='1.2em'>ually</tspan>";
+            } else {
+                return d;  // For other words, just return the word itself
+            }
+        })
+        // Apply CSS to tspan elements to inherit the font styles
+        .selectAll('tspan')
+        .style("font-family", "Arial, sans-serif")  // Ensure same font as the default
+        .style("font-size", "12px");
+    
+    
+
+        // Y axis
+        svg.append("g")
+            .call(d3.axisLeft(yScale))
+            .attr("class", "axis-label")
+            .selectAll(".tick text")
+            .filter(function(d) { return d >= 0.0 && d <= 1.0; })
+            .attr("dx", "-1em")
+            .attr("dy", ".15em");
+
+        // Add bars
+        // svg.selectAll(".bar")
+        //     .data(sentimentScores)
+        //     .enter().append("rect")
+        //     .attr("class", "bar")
+        //     .attr("x", (d, i) => xScale(words[i]))
+        //     .attr("y", d => yScale(d))
+        //     .attr("width", xScale.bandwidth())
+        //     .attr("height", d => height - yScale(d))
+        //     .attr("data-original-color", function(d) { return colorScale(d); })
+        //     .style("fill", function(d) { return colorScale(d); })
+        //     .on("mouseover", function(event, d) {
+        //         d3.select(this).style("fill", "orange");
+        //         const word = words[sentimentScores.indexOf(d)];
+        //         const score = d;
+        //         d3.select("#tooltip")
+        //             .style("visibility", "visible")
+        //             .html(`${word}: ${score}`)
+        //             .style("top", (event.pageY - 10) + "px")
+        //             .style("left", (event.pageX + 10) + "px");
+        //         updateLegendPosition(d);
+        //     })
+        //     .on("mouseout", function() {
+        //         d3.select(this).style("fill", d3.select(this).attr("data-original-color"));
+        //         d3.select("#tooltip").style("visibility", "hidden");
+        //         resetLegendPosition();
+        //     });
+        svg.selectAll(".bar")
+                .data(sentimentScores)
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", (d, i) => xScale(words[i]))
+                .attr("y", height)  // Start from the bottom (y = height)
+                .attr("width", xScale.bandwidth())
+                .attr("height", 0)  // Initial height = 0
+                .attr("data-original-color", function (d) { return colorScale(d); })
+                .style("fill", function (d) { return colorScale(d); })
+                .transition()  // Start the transition
+                .duration(1000)
+                .attr("y", d => yScale(d)-1)  // Animate to the final y position
+                .attr("height", d => height - yScale(d));  // Animate to the final height
+           
+                svg.selectAll(".bar")
+                .on("mouseover", function (event, d) {
+                    //d3.select(this).style("fill", "orange");
+                    d3.select(this).style("stroke", "orange")
+                        .style("stroke-width","3px");
+                    const word = words[sentimentScores.indexOf(d)];
+                    const score = d;
+                    d3.select("#tooltip")
+                        .style("visibility", "visible")
+                        .html(`${word}: ${score}`)
+                        .style("top", (event.pageY - 10) + "px")
+                        .style("left", (event.pageX + 10) + "px");
+                    updateLegendPosition(score);
+                })
+                .on("mouseout", function () {
+                    d3.select(this).style("fill", d3.select(this).attr("data-original-color"));
+                    
+                    d3.select(this).style("stroke", "orange")
+                        .style("stroke-width", "0px");
+                    d3.select("#tooltip").style("visibility", "hidden");
+                    resetLegendPosition();
+                });
+
+
+            function updateLegendPosition(score) {
+                const position = ((score + 1) / 2 * 650) + 50;
+                d3.select("#drag-handle")
+                    .transition()  // Start the transition
+                    .duration(500)
+                    .attr("cx", position);
+                const wordIndex = Math.floor((score + 1) / 2 * words.length);
+                const word = words[wordIndex];
+                d3.select("#legend-tooltip")
+
+
+            }
+
+            function resetLegendPosition() {
+                d3.select("#drag-handle")
+                    .transition()  // Start the transition
+                    .duration(500).attr("cx", legendWidth / 2+50);
+                d3.select("#legend-tooltip")
+                    .style("visibility", "hidden")
+                    .html("");
+            }
+
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", -20)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "16px")
+            .attr("font-weight", "bold")
+            .text("Sentiment Analysis for ESFJ Words");
+        
+            
+
+        const legendSvg = d3.select("#legend");
+        const legendWidth = 650;
+
+        const gradient = legendSvg.append("defs").append("linearGradient")
+            .attr("id", "gradient")
+            .attr("x1", "0%")
+            .attr("x2", "100%")
+            .attr("y1", "0%")
+            .attr("y2", "0%");
+
+        gradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "#BAEAFF");
+        gradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "#E15457");
+
+        legendSvg.append("rect")
+            .attr("x", 50)
+            .attr("y", 0)
+            .attr("width", legendWidth)
+            .attr("height", 20)
+            .style("fill", "url(#gradient)");
+
+        legendSvg.append("text")
+            .attr("x", legendWidth / 2+50)
+            .attr("y", 50 - 10)
+            .attr("font-size", "14px")
+            .attr("class", "legend-text")
+            .text("Sentiment Score Legend");
+
+        const dragBar = legendSvg.append("rect")
+            .attr("id", "drag-bar")
+            .attr("x", 50)
+            .attr("y", 35 - 10)
+            .attr("width", legendWidth)
+            .attr("height", 5)
+            .style("fill", "#aaa");
+
+        let dragPosition = legendWidth / 2+50;
+        const dragHandle = legendSvg.append("circle")
+            .attr("id", "drag-handle")
+.attr("cx", dragPosition)
+.attr("cy", 37 - 10)
+.attr("r", 7)
+.attr("class", "drag-handle")
+.call(d3.drag()
+.on("drag", function(event) {
+const newX = Math.max(50, Math.min(50 + legendWidth, event.x));
+d3.select(this).attr("cx", newX);
+dragPosition = newX;
+const position = (newX - 50) / legendWidth * 2 - 1;
+const wordIndex = Math.floor((position + 1) / 2 * words.length);
+const word = words[wordIndex];
+const sentimentScore = sentimentScores[wordIndex];
+d3.select("#legend-tooltip")
+.transition() // 开始过渡
+                    .duration(5000) // 设置过渡持续时间为 300 毫秒
+.style("visibility", "visible")
+.style("top", (event.pageY - 40) + "px")
+.style("left", (event.pageX + 10) + "px");
+})
+.on("end", function() {
+// 拖动结束后的逻辑
+})
+);
+</script>
+
+</body> </html>

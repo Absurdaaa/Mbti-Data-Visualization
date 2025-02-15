@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="css/index-css.css" />
+<!-- 下面两行是字体，可以省略 -->
+<link href="https://fonts.googleapis.com" rel="preconnect" >
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin >
+
+<style>
+    .chart-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        background-color: #ECE6D8; /* 修改背景色为 #ECE6D8 */
+    }
+
+    .chart {
+        width: 100%;
+        /* 每个图表宽度为父容器的45% */
+        height: 100%;
+        /* 每个图表的高度 */
+        background-color: #ECE6D8;
+    }
+</style>
+
+</head>
+
+<body id="iim3">
+    <div id="title" title="title">
+        <iframe id="subject" src="../final/标题/subject1.html" title="主题" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+    </div>
+    <!-- 径向条形 -->
+    <div id="jingxiang">
+        <iframe id="radialChart" src="../final/径向图/jingixang.html" title="径向条形" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+    <!-- 热力图 -->
+    <div id="hot">
+        <iframe src="../final/受欢迎程度/welcome.html" title="hot"
+            style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+    <!-- 全球地图 -->
+    <div id="map">
+        <title>数据可食化（实验五）</title>
+        <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+        <iframe id="mapChart" src="../final/map/地图.html" title="Ciyun Page" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+    <!-- 情绪词汇条形图 -->
+    <div id="mood">
+        <iframe id="moodChart" src="../final/词频情感分析/chart_example_from_d3-graph-gallery.html" title="Mood Page"
+            style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+    <!-- mbti词云图 -->
+    <div id="cloud">
+        <iframe id="wordcloudChart" src="../final/词云/wordcloud.html" title="Ciyun Page"
+            style="width: 100%; height: 100%; border: none;background-color: #ECE6D8;  "></iframe>
+    </div>
+    
+    
+    <script>
+        // 监听地图  地图 的 点击 消息
+        window.addEventListener("message", function (event) {
+            // 确保消息来源合法
+            // if (event.origin !==  "http//:localhost:3000") return; // 替换为地图 iframe 的实际域名
+            if (event.source !== document.getElementById("mapChart").contentWindow) return; // 只接受来自指定 iframe 的消息
+            let lastCountryReceived = null; // 用于记录上一次收到的国家名称
+            
+            // 检查数据是否为字符串
+            if (typeof event.data === "string") {
+                const countryName = event.data; // 获取传递的国家名称
+                if(countryName === lastCountryReceived){
+                    return;
+                }
+                lastCountryReceived = countryName;
+                console.log("主页面收到地图的国家信息:", countryName);
+                //收到后发送信息
+                let send = document.getElementById("radialChart").contentWindow;
+                send.postMessage(countryName, "*");
+                // 执行后续逻辑
+            } 
+        });
+        var data = [
+                { group: "ENTP",detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ENTP_bar.html" },
+                { group: "ESTP",detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ESTP_bar.html" },
+                { group: "ENFJ", detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ENFJ_bar.html" },
+                { group: "ENTJ", detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ENTJ_bar.html" },
+                { group: "ENFP", detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ENFP_bar.html" },
+                { group: "ESFP", detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ESFP_bar.html" },
+                { group: "ESFJ", detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ESFJ_bar.html" },
+                { group: "INTJ",detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_INTJ_bar.html" },
+                { group: "ESTJ", detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ESTJ_bar.html" },
+                { group: "INFJ",detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_INFJ_bar.html" },
+                { group: "INTP", detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_INTP_bar.html" },
+                { group: "INFP",detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_INFP_bar.html" },
+                { group: "ISTJ", detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ISTJ_bar.html" },
+                { group: "ISTP",detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ISTP_bar.html" },
+                { group: "ISFJ",  detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ISFJ_bar.html" },
+                { group: "ISFP",  detailPage: "../final/词频情感分析/gaipinci/sentiment_analysis_ISFP_bar.html" }
+            ];
+        // 监听 词云 的 点击 消息
+        window.addEventListener("message", function (event) {
+
+                if (event.source !== document.getElementById("wordcloudChart").contentWindow) return; // 只接受来自指定 iframe 的消息
+                
+                let lastmbti = null; // 用于记录上一次收到的国家名称
+                // 检查数据是否为字符串
+                if (typeof event.data === "string") {
+                    const personality = event.data; 
+                    if (personality === lastmbti) {
+                        return;
+                    }
+                    lastmbti = personality;
+                    console.log("主页面收到词云的人格信息:", personality);
+                    //收到后发送信息
+                    let send = document.getElementById("mapChart").contentWindow;
+                    send.postMessage(personality, "*");
+                    // 执行后续逻辑
+                    let send_2 = document.getElementById("moodChart").contentWindow;
+                    send_2.postMessage(personality, "*");
+                    
+                    const iframe = document.getElementById('moodChart');
+                    iframe.src = data.find(item => item.group === personality).detailPage;  // 更新 iframe 的 src 属性
+                }
+            });
+    </script>
+</body>
+</html>

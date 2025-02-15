@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="https://d3js.org/d3.v5.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3.layout.cloud.js"></script>
+
+<style>
+  /* 定义包含所有词云的容器 */
+  #container {
+    display: grid;                /* 使用网格布局 */
+    grid-template-columns: repeat(2, 1fr);  /* 2列 */
+    grid-template-rows: repeat(8, 125px);   /* 增加行高度，确保有足够空间 */
+    gap:3.5px;                    /* 词云之间的间距 */
+    justify-items: center;        /* 水平居中对齐 */
+    align-items: center;          /* 垂直居中对齐 */
+    margin: 16px;               /* 整个容器的外边距 */
+  }
+</style>
+
+<div id="container">
+</div> <!-- 所有词云的容器 -->
+
+<script>
+// 定义每个人格对应的卡通形象（根据需要调整图片路径）
+const personalityImages = {
+  "ENFJ": "ENFJ.png",  
+  "ENFP": "ENFP.png", 
+  "ENTJ": "ENTJ.png",
+  "ENTP": "ENTP.png",
+  "ENTP": "ENTP.png",
+  "ESFJ": "ESFJ.png",
+  "ESFP": "ESFP.png",
+  "ESTJ": "ESTJ.png",
+  "ESTP": "ESTP.png",
+  "INFJ": "INFJ.png",
+  "INFP": "INFP.png",
+  "INTJ": "INTJ.png",
+  "INTP": "INTP.png",
+  "ISFJ": "ISFJ.png",
+  "ISFP": "ISFP.png",
+  "ISTJ": "ISTJ.png",
+  "ISTP": "ISTP.png"
+};
+
+// 函数：将词频映射到大小范围（0-50）
+function mapSize(frequency, words) {
+  const maxSize = 40;  // 缩小最大字体大小到原来的一半
+  const minSize = 4;   // 缩小最小字体大小到原来的一半
+  const maxFrequency = Math.max(...words.map(d => d.size));  // 找到最大词频
+  const minFrequency = Math.min(...words.map(d => d.size));  // 找到最小词频
+
+  // 使用线性比例将频率映射到大小
+  const size = minSize + (frequency - minFrequency) * (maxSize - minSize) / (maxFrequency - minFrequency);
+  return size;
+}
+
+// 函数：生成一个随机颜色
+function getRandomColor() {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+//在外面初始化全局变量记录上一次的人格
+let lastmbti = null;
+// 函数：为给定的个性类型创建词云
+function createWordCloud(personality, words) {
+  var margin = {top: 3, right: 10, bottom: 28, left: 35},
+      width = 195 - margin.left - margin.right,  
+      height = 130 - margin.top - margin.bottom; 
+
+  // 为特定的个性类型在容器中添加svg元素
+  var svg = d3.select("#container").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)  // 设置viewBox
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  
+//   // 在整个SVG元素周围添加一个矩形边框
+//   svg.append("rect")
+//       .attr("width", width)
+//       .attr("height", height)
+//       .attr("stroke", "black")  // 边框颜色
+//       .attr("stroke-width", 3)  // 边框粗细
+//       .attr("fill", "none");    // 无填充颜色
+
+  // 添加卡通形象到左上方
+
+  const imageUrl = personalityImages[personality];  // 获取对应的人格卡通图片
+  if (imageUrl) {
+    svg.append("image")
+      .attr("x", -35)  // 左上角偏移
+      .attr("y", -5)  // 上方偏移
+      .attr("width", 50)  // 缩小图片的宽度
+      .attr("height", 50)  // 缩小图片的高度
+      .attr("xlink:href", imageUrl)  // 图片路径
+      .on("click", function () {
+          // 在这里定义点击图片后的操作
+          const mbti = personality;
+          // 如果与上一次发送的国家相同，则不发送消息
+          if (mbti !== lastmbti) {
+              lastmbti = mbti; // 更新记录
+              console.log("发送人格信息:", mbti);
+              window.parent.postMessage(mbti, "*");
+          }
+          else{
+            console.log("和上一次人格信息相同:", mbti);
+          }
+      })
+      .on("mouseover", function () {
+            d3.select(this)
+              .transition()  // 添加过渡动画
+              .duration(200)  // 设置动画持续时间
+              .attr("width", 70)  // 图片变大
+              .attr("height", 70);  // 图片变大
+        })
+        .on("mouseout", function () {
+            d3.select(this)
+                .transition()  // 添加过渡动画
+                .duration(200)  // 设置动画持续时间
+                .attr("width", 50)  // 图片变大
+                .attr("height", 50);  // 图片变大
+        });
+  }
+
+  // 构建词云布局
+  var layout = d3.layout.cloud()
+    .size([width, height])  // 固定区域的大小（矩形）
+    .words(words.map(function(d) { 
+        return {text: d.text, size: mapSize(d.size, words), color: getRandomColor()}; 
+    }))
+    .padding(1)         // 减少词语之间的间距，增加覆盖度
+    .rotate(function() { return ~~(Math.random() * 2) * 90; })  // 随机旋转 90 度
+    .fontSize(function(d) { return d.size; })      // 设置词语的字体大小
+    .on("end", function(words) { draw(words, svg, width, height, personality); });
+  layout.start();
+}
+
+// 函数：在词云中绘制词语，并在下方显示人格名称
+function draw(words, svg, width, height, personality) {
+  svg
+    .append("g")
+      .attr("transform", "translate(" + (width / 2) + "," + (height / 2) + ")")  // 居中词语
+      .selectAll("text")
+        .data(words)
+      .enter().append("text")
+        .style("font-size", function(d) { return d.size + "px"; })
+        .style("fill", function(d) { return d.color; })  // 应用随机颜色
+        .attr("text-anchor", "middle")
+        .style("font-family", "Impact")
+        .attr("transform", function(d) {
+          return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+        })
+        .text(function(d) { return d.text; });
+
+  // 在词云下方显示人格名称
+  svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", height + 15)  
+    .style("text-anchor", "middle")
+    .style("font-size", "14px")  // 调整字体大小
+    .style("font-weight", "bold")
+    .text(personality);
+}
+
+// 示例：加载JSON数据
+d3.json("word_freq.json").then(function(data) {
+  // 遍历每个个性类型并创建词云
+  let count = 0;
+  for (let personality in data) {
+    if (data.hasOwnProperty(personality)) {
+      if (count < 50) { 
+        createWordCloud(personality, data[personality]);
+        count++;
+      }
+    }
+  }
+});
+</script>

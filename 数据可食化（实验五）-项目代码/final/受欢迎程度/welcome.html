@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Relationship Heatmap</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* 样式设置 */
+          body {
+            background-color: #ECE6D8;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            font-size: 14px;
+        }
+
+        .cell {
+            stroke: #ccc;
+        }
+
+        .cell text {
+            font-size: 12px;
+            fill: #000;
+            text-anchor: middle;
+        }
+
+        .color-legend rect {
+            width: 25px;    /*  颜色条调整宽度 */
+            height: 10px;
+        }
+        
+        .tooltip {
+            position: absolute;
+            padding: 6px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border-radius: 4px;
+            pointer-events: none;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tooltip"></div>
+    <div style="transform: rotate(90deg); transform-origin: left top;
+        position: absolute; 
+        top: 35px; 
+        left: 24px;
+        font-weight: bold;">
+        Follower
+    </div>
+    
+    <div class="tooltip"></div>
+    <div id="heatmap-container"></div>
+    <div style="
+            position: absolute; 
+            top: 350px; 
+            left: 280px;
+            font-weight: bold;">
+        Followee
+    </div>
+    <div id="heatmap-container"></div>
+    <script>
+        // 图像路径数组（按类别顺序）
+            // const imagePaths = [
+            //     "final/受欢迎程度/pic/INFJ.png",
+            //     "final/受欢迎程度/pic/INTJ.png",
+            //     "final/受欢迎程度/pic/INTP.png",
+            //     "final/受欢迎程度/pic/INFP.png",
+            //     "final/受欢迎程度/pic/ESTJ.png",
+            //     "final/受欢迎程度/pic/ESFJ.png",
+            //     "final/受欢迎程度/pic/ENTJ.png",
+            //     "final/受欢迎程度/pic/ENFJ.png",
+            //     "final/受欢迎程度/pic/ESTP.png",
+            //     "final/受欢迎程度/pic/ESFP.png",
+            //     "final/受欢迎程度/pic/ENTP.png",
+            //     "final/受欢迎程度/pic/ENFP.png",
+            //     "final/受欢迎程度/pic/ISFJ.png",
+            //     "final/受欢迎程度/pic/ISFP.png",
+            //     "final/受欢迎程度/pic/ISTJ.png",
+            //     "final/受欢迎程度/pic/ISTP.png"
+            // ];
+        const tooltip = d3.select(".tooltip");
+        // 1. 加载 CSV 文件
+        d3.csv("matrix_normalized_row.csv").then(function (data) {
+            // 2. 提取 MBTI 类型
+            const mbtiTypes = data.columns.slice(1); // 读取除第一列外的所有列名作为 MBTI 类型
+            const matrixData = data.map(d => mbtiTypes.map(type => +d[type] || 0)); // 将数据转换为矩阵
+
+            // 3. 设置图形尺寸
+            const margin = { top: 30, right: 60, bottom: 30, left: 40 };
+            // const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+            const width = 400 - margin.left - margin.right;
+            const height = 350 - margin.top - margin.bottom;
+
+            // 4. 创建 SVG 元素
+            const svg = d3.select("#heatmap-container")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // 5. 设置颜色渐变
+            const colorScale = d3.scaleSequential(d3.interpolateYlGnBu)
+                .domain([0, d3.max(matrixData.flat())]);
+
+            // 6. 创建 X 和 Y 轴
+            const x = d3.scaleBand()
+                .domain(mbtiTypes)
+                .range([0, width])
+                //.padding(0.05);
+
+            const y = d3.scaleBand()
+                .domain(mbtiTypes)
+                .range([0, height])
+                //.padding(0.05);
+            
+            // 7. 绘制热力图格子
+            svg.selectAll(".cell")
+                .data(matrixData.flat())
+                .enter()
+                .append("rect")
+                .attr("x", (d, i) => x(mbtiTypes[i % mbtiTypes.length]))
+                .attr("y", (d, i) => y(mbtiTypes[Math.floor(i / mbtiTypes.length)]))
+                .attr("width", x.bandwidth())
+                .attr("height", y.bandwidth())
+                .attr("fill", d => colorScale(d))
+                .attr("class", "cell")
+                .style("stroke", "none") // 移除边框，确保没有边界;
+                .on("mouseover", (event,d,i) => {
+                    
+                    // const cellIndex = d3.select(this).datum(); // 通过 datum 获取数据
+
+                    // // 计算当前格子的 X 和 Y 标签
+                    // const xLabel = mbtiTypes[cellIndex % mbtiTypes.length];
+                    // const yLabel = mbtiTypes[Math.floor(cellIndex / mbtiTypes.length)];
+
+                    // // 打印输出，确认 x 和 y 标签是否正确
+                    // console.log(xLabel, yLabel);
+                    tooltip
+                        .style("opacity", 1)
+                        .html(`<strong>${d.toFixed(2)}%</strong>`)  // 显示格子对应的数值
+                        .style("left", `${event.pageX + 10}px`)
+                        .style("top", `${event.pageY + 10}px`);
+                    // path.transition().duration(200)
+                    //  .style("stroke", "black");  
+                })
+                .on("mouseout", () => {
+                    tooltip.style("opacity", 0);
+                });
+
+            // // 8. 添加 X 和 Y 轴
+            // svg.append("g")
+            //     .selectAll(".x-axis")
+            //     .data(mbtiTypes)
+            //     .enter()
+            //     .append("text")
+            //     .attr("x", (d, i) => x(d) + x.bandwidth() / 2)
+            //     .attr("y", height + 20)
+            //     .attr("text-anchor", "middle")
+            //     .text(d => d)
+            //     .attr("transform", "rotate(90)")  // 旋转文本 90 度
+            //     // .style("font-size", "14px")  // 调整竖直方向的对齐，避免文本被覆盖
+            //     .style("fill", "black");  // 设置字体颜色，可以根据需要修改
+            
+                svg.append("g")
+                .selectAll(".x-axis")
+                .data(mbtiTypes)
+                .enter()
+                .append("text")
+                .attr("x", (d, i) => x(d) + x.bandwidth() / 2) // 设置文本的 X 位置
+                .attr("y", height + 20)  // 设置文本的 Y 位置
+                .attr("transform", (d, i) => "rotate(90," + (x(d) + x.bandwidth() / 2) + "," + (height + 20) + ")") // 为每个文本设置独立的旋转中心
+                .attr("dy", "+5")  // 适当调整竖直方向的对齐，避免文本重叠
+                .attr("dx", "-5")  // 适当调整竖直方向的对齐，避免文本重叠
+                .attr("text-anchor", "middle")  // 设置文本的水平对齐
+                .text(d => d)
+                .style("font-size", "14px")
+                .style("fill", "black");
+
+ 
+
+
+
+
+            svg.append("g")
+                .selectAll(".y-axis")
+                .data(mbtiTypes)
+                .enter()
+                .append("text")
+                .attr("x", -15)
+                .attr("y", (d, i) => y(d) + y.bandwidth() / 2)
+                .attr("dy", "+5")  // 适当调整竖直方向的对齐，避免文本重叠
+                .attr("text-anchor", "middle")
+                .text(d => d)
+                .style("font-size", "14px");
+
+                svg.append("text")
+    .attr("x", 75)  // 距离左边缘的距离
+    .attr("y", -10)  // 距离顶部的距离
+    .attr("font-size", "16px")  // 设置字体大小
+    .attr("fill", "#000")  // 设置字体颜色
+    .attr("font-weight", "bold")  // 加粗字体
+    .text("16型人格相互吸引热力图");
+
+
+            // 9. 添加渐变标尺
+            const legendHeight = 42;
+            const legendWidth = height;
+
+            const legend = svg.append("g")
+                .attr("class", "color-legend")
+                .attr("transform", `translate(${width + 20}, 0)`);
+
+            const legendScale = d3.scaleLinear()
+                // .domain([0, 100])
+                .domain([0, d3.max(matrixData.flat())])
+                .range([legendWidth,0 ]);//映射
+
+            // 生成标尺的矩形条
+            legend.selectAll("rect")
+                .data(d3.range(0, legendHeight, 0.1))  // 通过逐步增加10单位来生成矩形条
+                .enter()
+                .append("rect")
+                .attr("x", 0)
+                .attr("y", d => legendScale(d))
+                .attr("height", 10)
+                .style("fill", (d) => colorScale(d));
+
+            // // 创建颜色标尺的刻度
+            // const axis = d3.axisRight(legendScale)
+            //     .ticks(5)  // 设置刻度的数量，控制显示的刻度数量
+            //     .tickSize(6)  // 设置刻度线的长度
+            //     .tickFormat(d3.format(".0f"));  // 可以设置刻度值的格式，这里以整数形式显示
+
+            // // 添加刻度轴到标尺
+            // legend.append("g")
+            //     .attr("transform", `translate(0, 0)`)  // 将轴移到正确位置
+            //     .call(axis);
+
+            // legend.append("g")
+            //     .attr("transform", `translate(0, 0)`)
+            //     .call(axis);
+
+        }).catch(function (error) {
+            console.error("Error loading the CSV file:", error);
+        });
+    </script>
+</body>
+
+</html>

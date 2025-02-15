@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>   
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<script>
+// Set the dimensions and margins of the graph
+var margin = {top: 80, right: 30, bottom: 40, left: 90},
+    width = 750 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+// Append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", -10)
+    .attr("text-anchor", "middle")
+    .style("font-size", "16px")
+    .style("font-weight", "bold")
+    .text("MBTI自恋指数排名（情感分析后结果）");
+
+// Custom dataset from your table
+var data = [
+  {group: "ENTP", character: 0.92321851321543214, color: "#826497", url: "https://example.com/entp", detailPage: "gaipinci/sentiment_analysis_ENTP_bar.html" },
+  {group: "ESTP", character: 0.91321543514992431, color: "#5897B1", url: "https://example.com/estp", detailPage: "gaipinci/sentiment_analysis_ESTP_bar.html" },
+  {group: "ENFJ", character: 0.82434782608695654, color: "#56A178", url: "https://example.com/enfj", detailPage: "gaipinci/sentiment_analysis_ENFJ_bar.html" },
+  {group: "ENTJ", character: 0.8082926829268293, color: "#826497", url: "https://example.com/entj", detailPage: "gaipinci/sentiment_analysis_ENTJ_bar.html" },
+  {group: "ENFP", character: 0.77414634146341465, color: "#56A178", url: "https://example.com/enfp", detailPage: "gaipinci/sentiment_analysis_ENFP_bar.html" },
+  {group: "ESFP", character: 0.65354156124621310, color: "#5897B1", url: "https://example.com/esfp", detailPage: "gaipinci/sentiment_analysis_ESFP_bar.html" },
+  {group: "ESFJ", character: 0.62049164124531541, color: "#DDAF51", url: "https://example.com/esfj", detailPage: "gaipinci/sentiment_analysis_ESFJ_bar.html" },
+  {group: "INTJ", character: 0.53242146161215460, color: "#826497", url: "https://example.com/intj", detailPage: "gaipinci/sentiment_analysis_INTJ_bar.html" },
+  {group: "ESTJ", character: 0.51692307692307693, color: "#DDAF51", url: "https://example.com/estj", detailPage: "gaipinci/sentiment_analysis_ESTJ_bar.html" },
+  {group: "INFJ", character: 0.43258351893095768, color: "#56A178", url: "https://example.com/infj", detailPage: "gaipinci/sentiment_analysis_INFJ_bar.html" },
+  {group: "INTP", character: 0.39322033898305085, color: "#826497", url: "https://example.com/intp", detailPage: "gaipinci/sentiment_analysis_INTP_bar.html" },
+  {group: "INFP", character: 0.3644642857142857, color: "#56A178", url: "https://example.com/infp", detailPage: "gaipinci/sentiment_analysis_INFP_bar.html" },
+  {group: "ISTP", character: 0.302988505747126436, color: "#5897B1", url: "https://example.com/istp", detailPage: "gaipinci/sentiment_analysis_ISTP_bar.html" },
+  {group: "ISTJ", character: 0.25818181818181818, color: "#DDAF51", url: "https://example.com/istj", detailPage: "gaipinci/sentiment_analysis_ISTJ_bar.html" },
+  {group: "ISFJ", character: 0.2281122421011220, color: "#DDAF51", url: "https://example.com/isfj", detailPage: "gaipinci/sentiment_analysis_ISFJ_bar.html" },
+  {group: "ISFP", character: 0.20666666666666667, color: "#5897B1", url: "https://example.com/isfp", detailPage: "gaipinci/sentiment_analysis_ISFP_bar.html" }
+];
+
+// Add X axis with ticks at intervals of 0.1
+var x = d3.scaleLinear()
+  .domain([0, 1])
+  .range([0, width]);
+svg.append("g")
+  .attr("transform", "translate(0," + height + ")")
+  .call(d3.axisBottom(x).ticks(11));  // Show ticks at intervals of 0.1
+
+// Add Y axis with bold group names
+var y = d3.scaleBand()
+  .range([0, height])
+  .domain(data.map(function(d) { return d.group; }))
+  .padding(0.1);
+svg.append("g")
+  .call(d3.axisLeft(y).tickSize(0)) // Remove ticks on the y-axis
+  .selectAll(".tick text") // Select all the group labels
+  .style("font-weight", "bold"); // Make the group labels bold
+
+// Bars
+var bars = svg.selectAll("myRect")
+  .data(data)
+  .enter()
+  .append("rect")
+  .attr("x", x(0))
+  .attr("y", function(d) { return y(d.group); })
+  .attr("width", function(d) { return x(d.character); })
+  .attr("height", y.bandwidth())
+  .attr("fill", function(d) { return d.color; }) // Dynamic color assignment
+  .on("mouseover", function () {
+        d3.select(this).transition().attr("fill-opacity", 0.8);
+    })
+    .on("mouseout", function () {
+        d3.select(this).transition().attr("fill-opacity", 1);
+    })
+  .on("click", d => {
+      window.location.href = d.detailPage; // Navigate to the detail page
+  });
+
+// Add the average line (with thicker stroke)
+var averageValue = 0.55;
+svg.append("line")
+  .attr("x1", x(averageValue))
+  .attr("x2", x(averageValue))
+  .attr("y1", 0)
+  .attr("y2", height)
+  .attr("stroke", "red")
+  .attr("stroke-width", 3)  // Increased stroke width
+  .attr("stroke-dasharray", "5,5");  // Dashed line
+
+// Add the average value label on the x axis
+svg.append("text")
+  .attr("x", x(averageValue))
+  .attr("y", height + 30) // Position it just below the x axis
+  .attr("text-anchor", "middle") // Center the text on the line
+  .style("fill", "red")
+  .style("font-weight", "bold") // Make the average value text bold
+  .text("平均值: 0.55");
+
+// Add value labels to the right of each bar
+bars.each(function(d) {
+  var bar = d3.select(this);
+  svg.append("text")
+    .attr("x", x(d.character) + 5) // Position it to the right of the bar
+    .attr("y", y(d.group) + y.bandwidth() / 2) // Center it vertically
+    .attr("dy", ".35em") // Adjust vertical alignment
+    .style("fill", "black")
+    .style("font-size", "12px") // Set font size
+    .style("font-family", "Arial, sans-serif") // Set font family
+    .text(d3.format(".2f")(d.character)); // Format the value to two decimal places
+});
+</script>

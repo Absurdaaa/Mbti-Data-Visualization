@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据可视化大作业</title>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            background-color: #ECE6D8;
+        }
+        #map {
+            height: 88vh;
+            width: 100%;
+            background-color: #ECE6D8
+        }
+        #toggleButton { 
+        box-sizing: border-box; 
+        margin: 0px;
+        padding:10px;
+        font-size: 18px;
+        border-radius: 8px;
+        background-color: #ECE6D8;
+        color: black;
+        font-weight: bold;
+        /* border: none; */
+        cursor: pointer;
+        width:24.5%;
+        border: 2px solid #D3D3D3
+    }
+    #toggleButton:hover {
+        background-color: #C2B79F;
+    }
+    #toggleThinkingFeelingButton {
+        box-sizing: border-box; 
+        margin: 0px;
+        padding: 10px;
+        font-size: 18px;
+        border-radius: 8px;
+        background-color: #ECE6D8;
+        color: black;
+        font-weight: bold;
+        /* border: none; */
+        cursor: pointer;
+        width:24.5%;
+        border: 2px solid#D3D3D3
+    }
+    #toggleThinkingFeelingButton:hover {
+        background-color: #C2B79F;
+    }
+
+    #toggleJudgingPerceivingButton {
+        box-sizing: border-box; 
+        margin: 0px;
+        padding: 10px;
+        font-size: 18px;
+        border-radius: 8px;
+        background-color: #ECE6D8;
+        color: black;
+        font-weight: bold;
+        /* border: none; */
+        cursor: pointer;
+        width:24.5%;
+        border: 2px solid #D3D3D3
+    }
+    #toggleJudgingPerceivingButton:hover {
+        background-color: #C2B79F;
+    }
+    #toggleSensingIntuitionButton {
+        box-sizing: border-box; 
+        margin: 0px;
+        padding: 10px;
+        font-size: 18px;
+        border-radius: 8px;
+        background-color: #ECE6D8; 
+        color: black;
+        font-weight: bold;
+        /* border: none; */
+        cursor: pointer;
+        width:24.5%;
+         border: 2px solid #D3D3D3
+    }
+    #toggleSensingIntuitionButton:hover {
+        background-color: #C2B79F;
+    }
+    #analyzeButton {
+        margin: 5px;
+        padding: 10px;
+        font-size: 10px;
+        background-color: #ECE6D8;
+        color: black;
+        border: none;
+        cursor: pointer;
+    }
+    #analyzeButton:hover {
+        background-color: #ECE6D8;
+    } 
+    #diplomacyButton {
+        margin: 5px;
+        padding: 10px;
+        font-size: 10px;
+        background-color: #ECE6D8;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    #diplomacyButton:hover {
+        background-color: #ECE6D8;
+    }#guardButton {
+        margin: 5px;
+        padding: 10px;
+        font-size: 10px;
+        background-color: blue; 
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    #guardButton:hover {
+        background-color: darkblue;
+    }  
+    #explorationButton {
+        margin: 5px;
+        padding: 10px;
+        font-size: 10px;
+        background-color:orange; 
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    #explorationButton:hover {
+        background-color: orange;
+    }
+        .legend {
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            font-size: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .legend div {
+            margin-bottom: 8px;
+        }
+        .legend .color-box {
+            width: 10px;
+            height: 10px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <button id="toggleButton">外向(E)vs内向(I)</button>
+    <button id="toggleSensingIntuitionButton">直觉(N)vs感觉(S)</button>
+    <button id="toggleThinkingFeelingButton" >情感(F)vs思考(T)</button>
+    <button id="toggleJudgingPerceivingButton">感知(P)vs判断(J)</button>
+    <button id="analyzeButton" hidden>分析家(NT)</button>
+    <button id="diplomacyButton" hidden>外交家(NF)</button>
+    <button id="guardButton" hidden>守护者(SJ)</button>
+    <button id="explorationButton" hidden>探险家(SP)</button>
+    <div id="map"></div>
+    <div id="colorScaleContainer" style="display: none; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);">
+        <div style="width: 500px; height: 20px; background: linear-gradient(to right, rgb(0,255,255), rgb(255,0,255)); border: 1px solid black; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 5px;">
+            <!-- <span>起点</span>
+            <span>终点</span> -->
+        </div>
+    </div>
+
+    <div id="colorScaleContainer1" style="display: none; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);">
+        <div style="width: 500px; height: 20px; background: linear-gradient(to right, white, purple); border: 1px solid black; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 5px;">
+        </div>
+    </div>
+
+    <div id="colorScaleContainer2" style="display: none; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);">
+        <div style="width: 500px; height: 20px; background: linear-gradient(to right, white, darkgreen); border: 1px solid black; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 5px;">
+        </div>
+    </div>
+
+    <div id="colorScaleContainer3" style="display: none; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);">
+        <div style="width: 500px; height: 20px; background: linear-gradient(to right, white, blue); border: 1px solid black; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 5px;">
+        </div>
+    </div>
+
+    <div id="colorScaleContainer4" style="display: none; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);">
+        <div style="width: 500px; height: 20px; background: linear-gradient(to right, white, orange); border: 1px solid black; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 5px;">
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/0.0.9/leaflet.ajax.min.js"></script>
+    <script>
+       var map = L.map('map', {
+        zoomSnap: 0.1
+        }).setView([35, 0], 1.3);
+
+        const mbtiToCartoon = {
+            'INTJ-T': 'INTJ.png',
+            'INTP-T': 'INTP.png',
+            'ENTJ-T': 'ENFJ.png',
+            'ENTP-T': 'ENTP.png',
+            'INFJ-T': 'INFJ.png',
+            'INFP-T': 'INFP.png',
+            'ENFJ-T': 'ENFJ.png',
+            'ENFP-T': 'ENFP.png',
+            'ISTJ-T': 'ISTJ.png',
+            'ISFJ-T': 'ISFJ.png',
+            'ESTJ-T': 'ESTJ.png',
+            'ESFJ-T': 'ESFJ.png',
+            'ISTP-T': 'ISTP.png',
+            'ISFP-T': 'ISFP.png',
+            'ESTP-T': 'ESTP.png',
+            'ESFP-T': 'ESFP.png', 
+            'INTJ-A': 'INTJ.png',
+            'INTP-A': 'INTP.png',
+            'ENTJ-A': 'ENFJ.png',
+            'ENTP-A': 'ENTP.png',
+            'INFJ-A': 'INFJ.png',
+            'INFP-A': 'INFP.png',
+            'ENFJ-A': 'ENFJ.png',
+            'ENFP-A': 'ENFP.png',
+            'ISTJ-A': 'ISTJ.png',
+            'ISFJ-A': 'ISFJ.png',
+            'ESTJ-A': 'ESTJ.png',
+            'ESFJ-A': 'ESFJ.png',
+            'ISTP-A': 'ISTP.png',
+            'ISFP-A': 'ISFP.png',
+            'ESTP-A': 'ESTP.png',
+            'ESFP-A': 'ESFP.png'
+        };
+        var countryPersonalityData = {};
+        var countryPersonalityData1 = {};
+
+
+
+        fetch('countries.csv')  
+            .then(response => response.text())
+            .then(csvData => {
+                var parsedData = Papa.parse(csvData, { header: true });
+                parsedData.data.forEach(function (row) {
+                    var country = row.Country;
+                    var personalities = [];
+                    for (var i = 1; i < Object.keys(row).length; i += 1) {
+                        var personalityType = Object.keys(row)[i];
+                        var percentage = parseFloat(row[personalityType]);
+                        personalities.push({ type: personalityType, percentage: percentage });
+                    }
+                    personalities.sort(function (a, b) {
+                        return b.percentage - a.percentage;
+                    });
+                    countryPersonalityData1[country] = personalities.slice(0, 3);
+                });
+            })
+            .catch(error => console.error('加载 CSV 数据时出错:', error));
+
+            fetch('countries.csv')  
+            .then(response => response.text())
+            .then(csvData => {
+                var parsedData = Papa.parse(csvData, { header: true });
+                parsedData.data.forEach(function (row) {
+                    var country = row.Country;
+                    var personalities = [];
+                    for (var i = 1; i < Object.keys(row).length; i += 1) {
+                        var personalityType = Object.keys(row)[i];
+                        var percentage = parseFloat(row[personalityType]);
+                        personalities.push({ type: personalityType, percentage: percentage });
+                    }
+                    personalities.sort(function (a, b) {
+                        return b.percentage - a.percentage;
+                    });
+                    countryPersonalityData[country] = personalities.slice(0, 32);
+                });
+            })
+            .catch(error => console.error('加载 CSV 数据时出错:', error));
+            
+        function getPersonalityInfo(country) {
+            var personalities = countryPersonalityData1[country];
+            if (!personalities) return '无数据';
+
+            return personalities.map(function (item) {
+                var cartoonImage = mbtiToCartoon[item.type];
+                if (!cartoonImage) return item.type + ': ' +  (item.percentage*100).toFixed(2)+ '%<br>暂无卡通形象';
+
+                return item.type + ': ' + (item.percentage*100).toFixed(2)+ '%<br><img src="' + cartoonImage + '" alt="' + item.type + '" style="width: 50px; height: 50px;">';
+            }).join('<br>');
+        }
+        var mapLayer;
+        
+        fetch('countries.geo.json')  
+            .then(response => response.json())
+            .then(data => {
+                var filteredData = data.features.filter(function (feature) {
+                    return feature.properties.name !== 'Antarctica';
+                });
+
+                mapLayer = L.geoJSON(filteredData, {
+                    style: function (feature) {
+                        return {
+                            weight: 1,
+                            color: '#3388ff', 
+                            fillColor: 'white', 
+                            fillOpacity: 0.7
+                        };
+                    },
+                    onEachFeature: function (feature, layer) {
+                        var country = feature.properties.name;
+                        var personalityInfo = getPersonalityInfo(country);
+
+                        layer.bindTooltip('<strong>' + country + '</strong><br>' + personalityInfo, {
+                            permanent: false,
+                            direction: 'center',
+                            className: 'country-tooltip'
+                        });
+                        
+                        let lastCountrySent = null; // 用于记录上一次发送的国家名称
+
+                        layer.on('mouseover', function () {
+                            layer.setStyle({
+                                weight: 3,
+                                fillOpacity: 0.7
+                            });
+                        });
+                        
+                        layer.on('click', function () {
+
+                            const country = feature.properties.name;
+                            // 如果与上一次发送的国家相同，则不发送消息
+                            if (country !== lastCountrySent) {
+                                lastCountrySent = country; // 更新记录
+                                console.log("发送国家信息:", country);
+                                // if (typeof country !== "string") {
+                                //     console.warn("国家名称不是字符串:", country);
+                                //     return;
+                                // }
+                                window.parent.postMessage(country, "*");
+                            }
+                        });
+
+                        layer.on('mouseout', function () {
+                            layer.setStyle({
+                                weight: 1,
+                                fillOpacity: 0.7
+                            });
+                            
+                            // 鼠标移出时清空记录并发送空消息
+                            lastCountrySent = null;
+                        });
+                    }
+                }).addTo(map);
+            })
+            .catch(error => console.error('加载 GeoJSON 数据时出错:', error));
+
+        // 创建图例
+        var legend = L.control({position: 'bottomright'});
+
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = 
+                '<div><span class="color-box" style="background-color: rgb(0, 255, 255);"></span>性格</div>' +
+                '<div><span class="color-box" style="background-color: rgb(255, 0, 255);"></span>性格</div>';
+            return div;
+        };
+        
+        
+        // 隐藏图例
+        legend.addTo(map);
+        legend.getContainer().style.display = 'none';
+        function showColorScale() {
+            const colorScaleContainer = document.getElementById('colorScaleContainer');
+            colorScaleContainer.style.display = 'block';
+            const colorScaleContainer1 = document.getElementById('colorScaleContainer1');
+            colorScaleContainer1.style.display = 'none';
+            const colorScaleContainer2 = document.getElementById('colorScaleContainer2');
+            colorScaleContainer2.style.display = 'none';
+            const colorScaleContainer3 = document.getElementById('colorScaleContainer3');
+            colorScaleContainer3.style.display = 'none';
+            const colorScaleContainer4 = document.getElementById('colorScaleContainer4');
+            colorScaleContainer4.style.display = 'none';
+    }
+    function showColorScale1() {
+            const colorScaleContainer = document.getElementById('colorScaleContainer1');
+            colorScaleContainer.style.display = 'block';
+            const colorScaleContainer1 = document.getElementById('colorScaleContainer');
+            colorScaleContainer1.style.display = 'none';
+            const colorScaleContainer2 = document.getElementById('colorScaleContainer2');
+            colorScaleContainer2.style.display = 'none';
+            const colorScaleContainer3 = document.getElementById('colorScaleContainer3');
+            colorScaleContainer3.style.display = 'none';
+            const colorScaleContainer4 = document.getElementById('colorScaleContainer4');
+            colorScaleContainer4.style.display = 'none';
+            legend.getContainer().style.display = 'none';
+    }
+    function showColorScale2() {
+            const colorScaleContainer = document.getElementById('colorScaleContainer2');
+            colorScaleContainer.style.display = 'block';
+            const colorScaleContainer1 = document.getElementById('colorScaleContainer');
+            colorScaleContainer1.style.display = 'none';
+            const colorScaleContainer2 = document.getElementById('colorScaleContainer1');
+            colorScaleContainer2.style.display = 'none';
+            const colorScaleContainer3 = document.getElementById('colorScaleContainer3');
+            colorScaleContainer3.style.display = 'none';
+            const colorScaleContainer4 = document.getElementById('colorScaleContainer4');
+            colorScaleContainer4.style.display = 'none';
+            legend.getContainer().style.display = 'none';
+    }
+    
+    function showColorScale3() {
+            const colorScaleContainer = document.getElementById('colorScaleContainer3');
+            colorScaleContainer.style.display = 'block';
+            const colorScaleContainer1 = document.getElementById('colorScaleContainer');
+            colorScaleContainer1.style.display = 'none';
+            const colorScaleContainer2 = document.getElementById('colorScaleContainer1');
+            colorScaleContainer2.style.display = 'none';
+            const colorScaleContainer3 = document.getElementById('colorScaleContainer2');
+            colorScaleContainer3.style.display = 'none';
+            const colorScaleContainer4 = document.getElementById('colorScaleContainer4');
+            colorScaleContainer4.style.display = 'none';
+            legend.getContainer().style.display = 'none';
+    }
+    
+    function showColorScale4() {
+            const colorScaleContainer = document.getElementById('colorScaleContainer4');
+            colorScaleContainer.style.display = 'block';
+            const colorScaleContainer1 = document.getElementById('colorScaleContainer');
+            colorScaleContainer1.style.display = 'none';
+            const colorScaleContainer2 = document.getElementById('colorScaleContainer1');
+            colorScaleContainer2.style.display = 'none';
+            const colorScaleContainer3 = document.getElementById('colorScaleContainer2');
+            colorScaleContainer3.style.display = 'none';
+            const colorScaleContainer4 = document.getElementById('colorScaleContainer3');
+            colorScaleContainer4.style.display = 'none';
+            legend.getContainer().style.display = 'none';
+    }
+
+
+    // 外向 vs 内向 按钮
+    document.getElementById('toggleButton').onclick = function () {
+    showColorScale();
+    var max_extrovertedRatio = 0;
+    var min_extrovertedRatio = 1;
+    mapLayer.eachLayer(function (layer) {
+        var country = layer.feature.properties.name;
+        var scores = calculatePersonalityBalance(country);
+        var extrovertedScore = scores.extrovertedScore;
+        var introvertedScore = scores.introvertedScore;
+        var totalScore = extrovertedScore + introvertedScore;
+        //console.log(country,extrovertedScore,introvertedScore);
+
+        if (totalScore == 0) return;
+
+        var extrovertedRatio = extrovertedScore / totalScore;
+        var introvertedRatio=introvertedScore/totalScore;
+        //extrovertedRatio=extrovertedRatio-introvertedRatio;
+      
+        if (extrovertedRatio > max_extrovertedRatio) max_extrovertedRatio = extrovertedRatio;
+        if (extrovertedRatio < min_extrovertedRatio) min_extrovertedRatio = extrovertedRatio;
+    });
+    
+    var colorScale = d3.scaleLinear()
+    .domain([min_extrovertedRatio, max_extrovertedRatio])
+    .range(['rgb(0, 255, 255)', 'rgb(255, 0, 255)']); 
+
+    mapLayer.eachLayer(function (layer) {
+        var country = layer.feature.properties.name;
+        var scores = calculatePersonalityBalance(country);
+        var extrovertedScore = scores.extrovertedScore;
+        var introvertedScore = scores.introvertedScore;
+        var totalScore = extrovertedScore + introvertedScore;
+
+        if (totalScore === 0) return;
+
+        var extrovertedRatio = extrovertedScore / totalScore;
+        var color = colorScale(extrovertedRatio);
+        layer.setStyle({
+            fillColor: color,
+            fillOpacity: 0.7,
+            color: '#3388ff',
+            weight: 1
+        });
+    });
+            // 更新图例为外向vs内向
+            legend.getContainer().innerHTML = 
+                '<div><span class="color-box" style="background-color: rgb(0, 255, 255);"></span>内向型</div>' +
+                '<div><span class="color-box" style="background-color: rgb(255, 0, 255);"></span>外向型</div>';
+            // 更新颜色标尺文本
+            //document.querySelector('#colorScaleContainer span:nth-child(1)').textContent = '内向型';
+            //document.querySelector('#colorScaleContainer span:nth-child(2)').textContent = '外向型';
+
+            legend.getContainer().style.display = 'block';
+        };
+        
+        // 感觉 vs 直觉 按钮
+        document.getElementById('toggleSensingIntuitionButton').onclick = function() {
+            showColorScale();
+            var max_sensingRatio = 0;
+            var min_sensingRatio = 1;
+           
+            mapLayer.eachLayer(function (layer) {
+            var country = layer.feature.properties.name;
+            var scores = calculateSensingIntuitionBalance(country);
+            var sensingScore = scores.sensingScore;
+            var intuitionScore = scores.intuitionScore;
+            var totalScore = sensingScore + intuitionScore;
+
+            if (totalScore === 0) return;
+
+            var sensingRatio = sensingScore / totalScore;
+            var intuitionRatio=intuitionScore/totalScore;
+
+        if (sensingRatio > max_sensingRatio)max_sensingRatio = sensingRatio;
+        if (sensingRatio < min_sensingRatio)min_sensingRatio = sensingRatio;
+       
+         });
+
+        var colorScale1 = d3.scaleLinear()
+        .domain([min_sensingRatio, max_sensingRatio])
+        .range(['rgb(0, 255, 255)', 'rgb(255, 0, 255)']); 
+
+            mapLayer.eachLayer(function(layer) {
+                var country = layer.feature.properties.name;
+                var scores = calculateSensingIntuitionBalance(country);
+
+                var color = '#ffffff'; 
+                var sensingScore = scores.sensingScore;
+                var intuitionScore = scores.intuitionScore;
+                var totalScore = sensingScore + intuitionScore;
+
+                if (totalScore === 0) return;
+
+                var sensingRatio = sensingScore / totalScore;
+                var intuitionRatio = intuitionScore / totalScore;
+                var color = colorScale1(sensingRatio);
+                layer.setStyle({
+                    fillColor: color,
+                    fillOpacity: 0.7,
+                    color: '#3388ff',
+                    weight: 1
+                });
+            });
+
+            // 更新图例为感觉 vs 直觉
+            legend.getContainer().innerHTML = 
+                '<div><span class="color-box" style="background-color: rgb(0, 255, 255);"></span>直觉型</div>' +
+                '<div><span class="color-box" style="background-color: rgb(255, 0, 255);"></span>感觉型</div>';
+            // 更新颜色标尺文本
+            //document.querySelector('#colorScaleContainer span:nth-child(1)').textContent = '直觉型';
+            //document.querySelector('#colorScaleContainer span:nth-child(2)').textContent = '感觉型';
+            
+            legend.getContainer().style.display = 'block';
+        };
+
+        // 思考 vs 情感 按钮
+        document.getElementById('toggleThinkingFeelingButton').onclick = function() {
+            showColorScale();
+            var max_thinkingRatio=0;
+            var min_thinkingRatio=1;
+            mapLayer.eachLayer(function (layer) {
+            var country = layer.feature.properties.name;
+            var scores = calculateThinkingFeelingBalance(country);
+            var thinkingScore = scores.thinkingScore;
+            var feelingScore = scores.feelingScore;
+            var totalScore = thinkingScore + feelingScore;
+
+            if (totalScore === 0) return;
+
+            var thinkingRatio = thinkingScore / totalScore;
+            var feelingRatio = feelingScore / totalScore;
+        if (thinkingRatio > max_thinkingRatio)max_thinkingRatio = thinkingRatio;
+        if (thinkingRatio < min_thinkingRatio)min_thinkingRatio = thinkingRatio;
+         });
+
+        var colorScale = d3.scaleLinear()
+        .domain([min_thinkingRatio, max_thinkingRatio])
+        .range(['rgb(0, 255, 255)', 'rgb(255, 0, 255)']); 
+
+            mapLayer.eachLayer(function(layer) {
+                var country = layer.feature.properties.name;
+                var scores = calculateThinkingFeelingBalance(country);
+
+                var color = '#ffffff'; // 默认颜色
+
+                var thinkingScore = scores.thinkingScore;
+                var feelingScore = scores.feelingScore;
+                var totalScore = thinkingScore + feelingScore;
+
+                if (totalScore === 0) return;
+
+                var thinkingRatio = thinkingScore / totalScore;
+                var feelingRatio = feelingScore / totalScore;
+
+                var color = colorScale(thinkingRatio);
+                layer.setStyle({
+                    fillColor: color,
+                    fillOpacity: 0.7,
+                    color: '#3388ff',
+                    weight: 1
+                });
+            });
+
+            // 更新图例为思考 vs 情感
+            legend.getContainer().innerHTML = 
+                '<div><span class="color-box" style="background-color: rgb(0, 255, 255);"></span>思考型</div>' +
+                '<div><span class="color-box" style="background-color: rgb(255, 0, 255);"></span>情感型</div>';
+            // 更新颜色标尺文本
+            //document.querySelector('#colorScaleContainer span:nth-child(1)').textContent = '思考型';
+            //document.querySelector('#colorScaleContainer span:nth-child(2)').textContent = '情感型';
+            
+            legend.getContainer().style.display = 'block';
+        };
+
+        // 判断 vs 感知 按钮
+        document.getElementById('toggleJudgingPerceivingButton').onclick = function() {
+            showColorScale();
+            var max_perceivingRatio=0;
+            var min_perceivingRatio=1;
+            mapLayer.eachLayer(function(layer) {
+                var country = layer.feature.properties.name;
+                var scores = calculateJudgingPerceivingBalance(country);
+
+                var color = '#ffffff'; // 默认颜色
+
+                var judgingScore = scores.judgingScore;
+                var perceivingScore = scores.perceivingScore;
+                var totalScore = judgingScore + perceivingScore;
+
+                if (totalScore === 0) return;
+
+                var judgingRatio = judgingScore / totalScore;
+                var perceivingRatio = perceivingScore / totalScore;
+                if(perceivingRatio>max_perceivingRatio)max_perceivingRatio=perceivingRatio;  
+                if(perceivingRatio<min_perceivingRatio)min_perceivingRatio=perceivingRatio; 
+            });
+            
+        var colorScale = d3.scaleLinear()
+        .domain([min_perceivingRatio, max_perceivingRatio])
+        .range(['rgb(0, 255, 255)', 'rgb(255, 0, 255)']); 
+
+            mapLayer.eachLayer(function(layer) {
+                var country = layer.feature.properties.name;
+                var scores = calculateJudgingPerceivingBalance(country);
+
+                var color = '#ffffff'; // 默认颜色
+
+                var judgingScore = scores.judgingScore;
+                var perceivingScore = scores.perceivingScore;
+                var totalScore = judgingScore + perceivingScore;
+
+                if (totalScore === 0) return;
+
+                var judgingRatio = judgingScore / totalScore;
+                var perceivingRatio = perceivingScore / totalScore;
+
+               
+                var color = colorScale(perceivingRatio);
+                layer.setStyle({
+                    fillColor: color,
+                    fillOpacity: 0.7,
+                    color: '#3388ff',
+                    weight: 1
+                });
+            });
+
+            // 更新图例为判断 vs 感知
+            legend.getContainer().innerHTML = 
+                '<div><span class="color-box" style="background-color: rgb(0, 255, 255);"></span>判断型</div>' +
+                '<div><span class="color-box" style="background-color: rgb(255, 0, 255);"></span>感知型</div>';
+            // 更新颜色标尺文本
+            //document.querySelector('#colorScaleContainer span:nth-child(1)').textContent = '判断型';
+            //document.querySelector('#colorScaleContainer span:nth-child(2)').textContent = '感知型';
+            
+            legend.getContainer().style.display = 'block';
+        };
+        // 分析家按钮
+        // document.getElementById('analyzeButton').onclick = function() {
+        //     showColorScale1();
+        //     var max_analyzescore=0;
+        //     var min_analyzescore=1;
+        //     mapLayer.eachLayer(function(layer) {
+        //         var country = layer.feature.properties.name;
+        //         var scores =calculate_analyze(country);
+
+        //         var color = '#ffffff'; // 默认颜色
+
+        //         var analyzeScore = scores.analyzeScore;
+        //         if(analyzeScore>max_analyzescore)max_analyzescore=analyzeScore;  
+        //         if(analyzeScore<min_analyzescore)min_analyzescore=analyzeScore; 
+        //     });
+            
+        // var colorScale = d3.scaleLinear()
+        // .domain([min_analyzescore, max_analyzescore])
+        // .range(['white', 'purple']);
+
+        //     mapLayer.eachLayer(function(layer) {
+        //         var country = layer.feature.properties.name;
+        //         var scores = calculate_analyze(country);
+
+        //         var color = '#ffffff'; // 默认颜色
+
+        //         var analyzeScore = scores.analyzeScore;
+        //         if(analyzeScore==0){
+        //             return;
+        //         }
+        //         var color=colorScale(analyzeScore);
+        //         layer.setStyle({
+        //             fillColor: color,
+        //             fillOpacity: 0.7,
+        //             color: '#3388ff',
+        //             weight: 1
+        //         });
+        //     });
+
+        // };
+        
+        // function analyzeMapAndUpdate(mapLayer) {
+        //         // 初始化最大和最小的分析得分
+        //         var max_analyzescore = 0;
+        //         var min_analyzescore = 1;
+
+        //         // 第一次循环：计算每个国家的分析得分，获取最大和最小值
+        //         mapLayer.eachLayer(function (layer) {
+        //             var country = layer.feature.properties.name;
+        //             var scores = calculate_analyze(country);
+
+        //             var analyzeScore = scores.analyzeScore;
+        //             if (analyzeScore > max_analyzescore) max_analyzescore = analyzeScore;
+        //             if (analyzeScore < min_analyzescore) min_analyzescore = analyzeScore;
+        //         });
+
+        //         // 使用 D3 创建线性颜色比例尺
+        //         var colorScale = d3.scaleLinear()
+        //             .domain([min_analyzescore, max_analyzescore])
+        //             .range(['white', 'purple']);
+
+        //         // 第二次循环：根据分析得分设置地图层的颜色
+        //         mapLayer.eachLayer(function (layer) {
+        //             var country = layer.feature.properties.name;
+        //             var scores = calculate_analyze(country);
+
+        //             var analyzeScore = scores.analyzeScore;
+        //             if (analyzeScore == 0) {
+        //                 return; // 如果分析得分为 0，不修改颜色
+        //             }
+
+        //             var color = colorScale(analyzeScore); // 获取颜色
+        //             layer.setStyle({
+        //                 fillColor: color,
+        //                 fillOpacity: 0.7,
+        //                 color: '#3388ff',
+        //                 weight: 1
+        //             });
+        //         });
+        //     }
+
+        //     // 点击按钮时调用分析函数
+        //     document.getElementById('analyzeButton').onclick = function () {
+        //         showColorScale1();  // 假设这是你用来显示颜色刻度的函数
+        //         analyzeMapAndUpdate(mapLayer);  // 调用独立的函数
+        //     };
+            
+            
+        // // 外交家按钮
+        // document.getElementById('diplomacyButton').onclick = function() {
+        //     showColorScale2();
+        //     var max_diplomacyscore=0;
+        //     var min_diplomacyscore=1;
+        //     mapLayer.eachLayer(function(layer) {
+        //         var country = layer.feature.properties.name;
+        //         var scores =calculate_diplomacy(country);
+
+        //         var color = '#ffffff'; // 默认颜色
+
+        //         var diplomacyScore = scores.diplomacyScore;
+        //         if(diplomacyScore>max_diplomacyscore)max_diplomacyscore=diplomacyScore;  
+        //         if(diplomacyScore<min_diplomacyscore)min_diplomacyscore=diplomacyScore; 
+        //     });
+            
+        // var colorScale = d3.scaleLinear()
+        // .domain([min_diplomacyscore, max_diplomacyscore])
+        // .range(['white', 'darkgreen']);
+
+        //     mapLayer.eachLayer(function(layer) {
+        //         var country = layer.feature.properties.name;
+        //         var scores = calculate_diplomacy(country);
+
+        //         var color = '#ffffff'; // 默认颜色
+
+        //         var diplomacyScore = scores.diplomacyScore;
+        //         if(diplomacyScore==0){
+        //             return;
+        //         }
+        //         var color=colorScale(diplomacyScore)
+        //         layer.setStyle({
+        //             fillColor: color,
+        //             fillOpacity: 0.7,
+        //             color: '#3388ff',
+        //             weight: 1
+        //         });
+        //     });
+
+        // };
+        // // 守护者按钮
+        // document.getElementById('guardButton').onclick = function() {
+        //     showColorScale3();
+        //     var max_guardscore=0;
+        //     var min_guardscore=1;
+        //     mapLayer.eachLayer(function(layer) {
+        //         var country = layer.feature.properties.name;
+        //         var scores =calculate_guard(country);
+
+        //         var color = '#ffffff'; // 默认颜色
+
+        //         var guardScore = scores.guardScore;
+        //         if(guardScore>max_guardscore)max_guardscore=guardScore;  
+        //         if(guardScore<min_guardscore)min_guardscore=guardScore; 
+        //     });
+            
+        // var colorScale = d3.scaleLinear()
+        // .domain([min_guardscore, max_guardscore])
+        // .range(['white', 'blue']);
+
+        //     mapLayer.eachLayer(function(layer) {
+        //         var country = layer.feature.properties.name;
+        //         var scores = calculate_guard(country);
+
+        //         var color = '#ffffff'; // 默认颜色
+
+        //         var guardScore = scores.guardScore;
+        //         if(guardScore==0){
+        //             return;
+        //         }
+        //         var color=colorScale(guardScore);
+        //         layer.setStyle({
+        //             fillColor: color,
+        //             fillOpacity: 0.7,
+        //             color: '#3388ff',
+        //             weight: 1
+        //         });
+        //     });
+
+        // };
+        // //探险家按钮
+        // document.getElementById('explorationButton').onclick = function() {
+        //     showColorScale4();
+        //     var max_explorationscore=0;
+        //     var min_explorationscore=1;
+        //     mapLayer.eachLayer(function(layer) {
+        //         var country = layer.feature.properties.name;
+        //         var scores =calculate_exploration(country);
+
+        //         var color = '#ffffff'; // 默认颜色
+
+        //         var explorationScore = scores.explorationScore;
+        //         if(explorationScore>max_explorationscore)max_explorationscore=explorationScore;  
+        //         if(explorationScore<min_explorationscore)min_explorationscore=explorationScore; 
+        //     });
+            
+        // var colorScale = d3.scaleLinear()
+        // .domain([min_explorationscore, max_explorationscore])
+        // .range(['white', 'orange']);
+
+        //     mapLayer.eachLayer(function(layer) {
+        //         var country = layer.feature.properties.name;
+        //         var scores = calculate_exploration(country);
+
+        //         var color = '#ffffff'; // 默认颜色
+
+        //         var explorationScore = scores.explorationScore;
+        //         if(explorationScore==0){
+        //             return;
+        //         }
+        //         var color=colorScale(explorationScore);
+        //         layer.setStyle({
+        //             fillColor: color,
+        //             fillOpacity: 0.7,
+        //             color: '#3388ff',
+        //             weight: 1
+        //         });
+        //     });
+
+        // };
+        
+        // 重构版本
+        // 通用的分析并更新地图层颜色的函数
+            function analyzeAndSetColor(mapLayer, calculateScoreFunc, colorRange, scoreKey) {
+                // 初始化最大和最小得分
+                var maxScore = 0;
+                var minScore = 1;
+
+                // 第一次循环：计算每个国家的得分，获取最大和最小值
+                mapLayer.eachLayer(function (layer) {
+                    var country = layer.feature.properties.name;
+                    var scores = calculateScoreFunc(country);
+
+                    var score = scores[scoreKey];  // 根据传入的得分键动态获取得分
+                    if (score > maxScore) maxScore = score;
+                    if (score < minScore) minScore = score;
+                });
+
+                // 使用 D3 创建线性颜色比例尺
+                var colorScale = d3.scaleLinear()
+                    .domain([minScore, maxScore])
+                    .range(colorRange);
+
+                // 第二次循环：根据得分设置地图层的颜色
+                mapLayer.eachLayer(function (layer) {
+                    var country = layer.feature.properties.name;
+                    var scores = calculateScoreFunc(country);
+
+                    var score = scores[scoreKey];  // 根据传入的得分键动态获取得分
+
+                    if (score === 0) {
+                        return; // 如果得分为 0，不修改颜色
+                    }
+
+                    var color = colorScale(score);  // 获取颜色
+                    layer.setStyle({
+                        fillColor: color,
+                        fillOpacity: 0.7,
+                        color: '#3388ff',
+                        weight: 1
+                    });
+                });
+            }
+            
+            // 分析家按钮点击事件
+            document.getElementById('analyzeButton').onclick = function () {
+                showColorScale1();  // 显示颜色刻度
+                analyzeAndSetColor(mapLayer, calculate_analyze, ['white', 'purple'], 'analyzeScore');
+            };
+
+            // 外交家按钮点击事件
+            document.getElementById('diplomacyButton').onclick = function () {
+                showColorScale2();  // 显示颜色刻度
+                analyzeAndSetColor(mapLayer, calculate_diplomacy, ['white', 'darkgreen'], 'diplomacyScore');
+            };
+
+            // 守护者按钮点击事件
+            document.getElementById('guardButton').onclick = function () {
+                showColorScale3();  // 显示颜色刻度
+                analyzeAndSetColor(mapLayer, calculate_guard, ['white', 'blue'], 'guardScore');
+            };
+
+            // 探险家按钮点击事件
+            document.getElementById('explorationButton').onclick = function () {
+                showColorScale4();  // 显示颜色刻度
+                analyzeAndSetColor(mapLayer, calculate_exploration, ['white', 'orange'], 'explorationScore');
+            };
+
+        // 外向与内向计算函数
+        function calculatePersonalityBalance(country) {
+            var extrovertedTypes = ['ENFJ-A', 'ENFP-A', 'ENTJ-A', 'ENTP-A', 'ESFJ-A', 'ESFP-A', 'ESTJ-A', 'ESTP-A', 'ENFJ-T', 'ENFP-T', 'ENTJ-T', 'ENTP-T', 'ESFJ-T', 'ESFP-T', 'ESTJ-T', 'ESTP-T'];
+            var introvertedTypes = ['INFJ-A', 'INFP-A', 'INTJ-A', 'INTP-A', 'ISFJ-A', 'ISFP-A', 'ISTJ-A', 'ISTP-A', 'INFJ-T', 'INFP-T', 'INTJ-T', 'INTP-T', 'ISFJ-T', 'ISFP-T', 'ISTJ-T', 'ISTP-T'];
+
+            var extrovertedScore = 0;
+            var introvertedScore = 0;
+          
+            var personalities = countryPersonalityData[country];
+
+
+            // console.log(country,personalities);
+
+            if (!personalities) return { extrovertedScore: 0, introvertedScore: 0 };
+
+            personalities.forEach(function (item) {
+                if (extrovertedTypes.includes(item.type)) {
+                    extrovertedScore += item.percentage;
+                } else if (introvertedTypes.includes(item.type)) {
+                    introvertedScore += item.percentage;
+                }
+                else {
+            console.warn('Unknown personality type:', item.type); // 警告未知类型
+        }
+
+            });
+
+            return { extrovertedScore: extrovertedScore, introvertedScore: introvertedScore };
+        }
+
+        // 感觉与直觉计算函数
+        function calculateSensingIntuitionBalance(country) {
+            var sensingTypes = ['ISFJ-A', 'ISFP-A', 'ISTJ-A', 'ISTP-A', 'ESFJ-A', 'ESFP-A', 'ESTJ-A', 'ESTP-A', 'ISFJ-T', 'ISFP-T', 'ISTJ-T', 'ISTP-T', 'ESFJ-T', 'ESFP-T', 'ESTJ-T', 'ESTP-T'];
+            var intuitionTypes = ['INFJ-A', 'INFP-A', 'INTJ-A', 'INTP-A', 'ENFJ-A', 'ENFP-A', 'ENTJ-A', 'ENTP-A', 'INFJ-T', 'INFP-T', 'INTJ-T', 'INTP-T', 'ENFJ-T', 'ENFP-T', 'ENTJ-T', 'ENTP-T'];
+            
+            var sensingScore = 0;
+            var intuitionScore = 0;
+
+            var personalities = countryPersonalityData[country];
+
+            if (!personalities) return { sensingScore: 0, intuitionScore: 0 };
+
+            personalities.forEach(function (item) {
+                if (sensingTypes.includes(item.type)) {
+                    sensingScore += item.percentage;
+                } else if (intuitionTypes.includes(item.type)) {
+                    intuitionScore += item.percentage;
+                }
+            });
+
+            return { sensingScore: sensingScore, intuitionScore: intuitionScore };
+        }
+
+        // 思考与情感计算函数
+        function calculateThinkingFeelingBalance(country) {
+            var thinkingTypes = ['INFJ-T', 'INTJ-T', 'INFP-T', 'INTP-T', 'ENFJ-T', 'ENFP-T', 'ENTJ-T', 'ENTP-T', 'ISFJ-T', 'ISFP-T', 'ISTJ-T', 'ISTP-T', 'ESFJ-T', 'ESFP-T', 'ESTJ-T', 'ESTP-T'];
+            var feelingTypes = ['INFJ-A', 'INFP-A', 'INTJ-A', 'INTP-A', 'ENFJ-A', 'ENFP-A', 'ENTJ-A', 'ENTP-A', 'ISFJ-A', 'ISFP-A', 'ISTJ-A', 'ISTP-A', 'ESFJ-A', 'ESFP-A', 'ESTJ-A', 'ESTP-A'];
+
+            var thinkingScore = 0;
+            var feelingScore = 0;
+
+            var personalities = countryPersonalityData[country];
+
+            if (!personalities) return { thinkingScore: 0, feelingScore: 0 };
+
+            personalities.forEach(function (item) {
+                if (thinkingTypes.includes(item.type)) {
+                    thinkingScore += item.percentage;
+                } else if (feelingTypes.includes(item.type)) {
+                    feelingScore += item.percentage;
+                }
+            });
+
+            return { thinkingScore: thinkingScore, feelingScore: feelingScore };
+        }
+
+        // 判断与感知计算函数
+        function calculateJudgingPerceivingBalance(country) {
+            var judgingTypes = ['INFJ-A', 'INFJ-T', 'INTJ-A', 'INTJ-T', 'ISFJ-A', 'ISFJ-T', 'ISTJ-A', 'ISTJ-T', 'ENFJ-A', 'ENFJ-T', 'ESFJ-A', 'ESFJ-T', 'ESTJ-A', 'ESTJ-T'];
+            var perceivingTypes = ['INFP-A', 'INFP-T', 'INTP-A', 'INTP-T', 'ISFP-A', 'ISFP-T', 'ISTP-A', 'ISTP-T', 'ENFP-A', 'ENFP-T', 'ENTP-A', 'ENTP-T', 'ESFP-A', 'ESFP-T', 'ESTP-A', 'ESTP-T'];
+
+            var judgingScore = 0;
+            var perceivingScore = 0;
+
+            var personalities = countryPersonalityData[country];
+
+            if (!personalities) return { judgingScore: 0, perceivingScore: 0 };
+
+            personalities.forEach(function (item) {
+                if (judgingTypes.includes(item.type)) {
+                    judgingScore += item.percentage;
+                } else if (perceivingTypes.includes(item.type)) {
+                    perceivingScore += item.percentage;
+                }
+            });
+
+            return { judgingScore: judgingScore, perceivingScore: perceivingScore };
+        }
+          // 分析计算函数
+          function calculate_analyze(country) {
+            var analyzeTypes = ['INTJ-A', 'INTJ-T', 'ENTJ-A', 'ENTJ-T', 'INTP-A', 'INTP-T', 'ENTP-A', 'ENTP-T'];
+            var personalities = countryPersonalityData[country];
+            var analyzeScore=0;
+            if (!personalities) return {analyzeScore:0};
+
+            personalities.forEach(function (item) {
+                if (analyzeTypes.includes(item.type)) {
+                    analyzeScore += item.percentage;
+                }
+            });
+
+            return {analyzeScore:analyzeScore};
+        }
+        // 外交计算函数
+        function calculate_diplomacy(country) {
+            var diplomacyTypes = ['INFJ-A', 'INFJ-T', 'ENFJ-A', 'ENFJ-T', 'INFP-A', 'INFP-T', 'ENFP-A', 'ENFP-T'];
+            var personalities = countryPersonalityData[country];
+            var diplomacyScore=0;
+            if (!personalities) return {diplomacyScore:0};
+
+            personalities.forEach(function (item) {
+                if (diplomacyTypes.includes(item.type)) {
+                    diplomacyScore += item.percentage;
+                }
+            });
+
+            return {diplomacyScore:diplomacyScore};
+        }
+        //守护计算函数
+        function calculate_guard(country) {
+            var guardTypes = ['ISFJ-A', 'ISFJ-T', 'ISTJ-A', 'ISTJ-T', 'ESFJ-A', 'ESFJ-T', 'ESTJ-A', 'ESTJ-T'];
+            var personalities = countryPersonalityData[country];
+            var guardScore=0;
+            if (!personalities) return {guardScore:0};
+
+            personalities.forEach(function (item) {
+                if (guardTypes.includes(item.type)) {
+                    guardScore += item.percentage;
+                }
+            });
+
+            return {guardScore:guardScore};
+        }
+        //探险计算函数
+        function calculate_exploration(country) {
+            var explorationTypes = ['ISTP-A', 'ISTP-T', 'ISFP-A', 'ISFP-T', 'ESTP-A', 'ESTP-T', 'ESFP-A', 'ESFP-T'];
+            var personalities = countryPersonalityData[country];
+            var explorationScore=0;
+            if (!personalities) return {explorationScore:0};
+
+            personalities.forEach(function (item) {
+                if (explorationTypes.includes(item.type)) {
+                    explorationScore += item.percentage;
+                }
+            });
+     
+            return {explorationScore:explorationScore};
+        }
+        // //总和四种分类人格计算分数方式
+        // function calculate_(kind,country){
+        //     if(kind == "NT"){
+        //         return calculate_analyze(country)
+        //     }
+        //     else if(kind == "NF"){
+        //         return calculate_diplomacy(country);
+        //     }
+        //     else if (kind == "SJ") {
+        //         return calculate_guard(country);
+        //     }
+        //     else if (kind == "SP") {
+        //         return calculate_exploration(country);
+        //     }
+        // }
+        // 监听人格信息的变化并改变图
+            window.onload = function () {
+                window.addEventListener('message', function (event) {
+                    const personality = event.data; // 假设消息是国家名称
+                    console.log("地图图收到的人格信息:", personality);
+                    if( personality == "ENTP" ||
+                        personality == "INTP" ||
+                        personality == "ENTJ" ||
+                        personality == "INTJ" ){
+                    showColorScale1();  // 显示颜色刻度
+                        analyzeAndSetColor(mapLayer, calculate_analyze, ['white', 'purple'], 'analyzeScore');
+                    }
+                    else if(personality == "ENFJ" ||
+                        personality == "INFJ" ||
+                        personality == "INFP" ||
+                        personality == "ENFP" ){
+                            showColorScale2();  // 显示颜色刻度
+                        analyzeAndSetColor(mapLayer, calculate_diplomacy, ['white', 'darkgreen'], 'diplomacyScore');
+                    }
+                    else if (personality == "ISFJ" ||
+                        personality == "ISTJ" ||
+                        personality == "ESFJ" ||
+                        personality == "ESTJ") {
+                        showColorScale3();  // 显示颜色刻度
+                        analyzeAndSetColor(mapLayer, calculate_guard, ['white', 'blue'], 'guardScore');
+                    }
+                    else if (personality == "ISTP" ||
+                        personality == "ISFP" ||
+                        personality == "ESTP" ||
+                        personality == "ESFP") {
+                        showColorScale4();  // 显示颜色刻度
+                        analyzeAndSetColor(mapLayer, calculate_exploration, ['white', 'orange'], 'explorationScore');
+                    }
+                });
+            }
+            
+    </script>
+</body>
+</html>

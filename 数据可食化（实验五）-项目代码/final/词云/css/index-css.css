@@ -1,0 +1,207 @@
+/* 全局样式 */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+/* 坐标轴样式 */
+.axis path,
+.axis line {
+    fill: none;
+    shape-rendering: crispedges;
+}
+
+.axis text {
+    font-size: 14px;
+}
+
+/* 单元格文本样式 */
+.cell text {
+    font-size: 12px;
+    fill: rgb(0, 0, 0);
+    text-anchor: middle;
+}
+
+/* 色标样式 */
+.color-legend rect {
+    width: 20px;
+    height: 10px;
+}
+
+/* 地图样式 */
+#map {
+    width: 50%;
+    min-height: 60px;
+    height: 55%;
+    position: absolute;
+    left: 25%;
+    box-shadow: 0 0 5px 0 black;
+}
+
+/* 径向图样式 */
+#jingxiang {
+    width: 25%;
+    min-height: 100px;
+    height: 40%;
+    position: absolute;
+    box-shadow: 0 0 5px 0 black;
+    top: 20%;
+}
+
+/* 热力图样式 */
+#hot {
+    min-height: 100px;
+    width: 25%;
+    bottom: 0;
+    position: absolute;
+    height: 40%;
+    box-shadow: 0 0 5px 0 black;
+}
+
+/* 柱状图样式 */
+#mood {
+    min-height: 100px;
+    width: 50%;
+    right: 25%;
+    bottom: 0;
+    position: absolute;
+    height: 45%;
+    box-shadow: 0 0 5px 0 black;
+}
+
+/* 标题框 */
+#title {
+    min-height: 100px;
+    position: absolute;
+    width: 25%;
+    height: 20%;
+    box-shadow: 0 0 5px 0 black;
+}
+/* 词云 */
+#cloud {
+    min-height: 100px;
+    position: absolute;
+    width: 25%;
+    height: 100%;
+    box-shadow: 0 0 5px 0 black;
+    right: 0;
+}
+#map {
+    height: 90vh;
+    width: 100%;
+}
+#toggleButton { 
+margin: 20px;
+padding: 10px;
+font-size: 16px;
+background-color: lightblue; 
+color: white;
+border: none;
+cursor: pointer;
+}
+#toggleButton:hover {
+background-color: blue;
+}
+#toggleThinkingFeelingButton {
+margin: 20px;
+padding: 10px;
+font-size: 16px;
+background-color: lightblue; 
+color: white;
+border: none;
+cursor: pointer;
+}
+#toggleThinkingFeelingButton:hover {
+background-color: blue;
+}
+
+#toggleJudgingPerceivingButton {
+margin: 20px;
+padding: 10px;
+font-size: 16px;
+background-color:purple;
+color: white;
+border: none;
+cursor: pointer;
+}
+#toggleJudgingPerceivingButton:hover {
+background-color: indigo;
+}
+#toggleSensingIntuitionButton {
+margin: 20px;
+padding: 10px;
+font-size: 16px;
+background-color: purple; 
+color: white;
+border: none;
+cursor: pointer;
+}
+#toggleSensingIntuitionButton:hover {
+background-color: indigo;
+}
+#analyzeButton {
+margin: 20px;
+padding: 10px;
+font-size: 16px;
+background-color: purple; 
+color: white;
+border: none;
+cursor: pointer;
+}
+#analyzeButton:hover {
+background-color: indigo;
+} 
+#diplomacyButton {
+margin: 20px;
+padding: 10px;
+font-size: 16px;
+background-color: green; 
+color: white;
+border: none;
+cursor: pointer;
+}
+#diplomacyButton:hover {
+background-color: darkgreen;
+}#guardButton {
+margin: 20px;
+padding: 10px;
+font-size: 16px;
+background-color: blue; 
+color: white;
+border: none;
+cursor: pointer;
+}
+#guardButton:hover {
+background-color: darkblue;
+}  
+#explorationButton {
+margin: 20px;
+padding: 10px;
+font-size: 16px;
+background-color:orange; 
+color: white;
+border: none;
+cursor: pointer;
+}
+#explorationButton:hover {
+background-color: orange;
+}
+.legend {
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+.legend div {
+    margin-bottom: 8px;
+}
+.legend .color-box {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    margin-right: 10px;
+}

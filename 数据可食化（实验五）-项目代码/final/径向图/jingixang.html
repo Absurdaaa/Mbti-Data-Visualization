@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Radial Grouped Bar Chart</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ECE6D8;
+        }
+
+        #chart {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 90vh;
+            /* 使容器高度填满视口 */
+            width: 100%;
+            /* 宽度占满屏幕 */
+        }
+
+        .bar {
+            box-sizing: border-box;
+            stroke: #ECE6D8;
+            stroke-width: 3px;
+        }
+
+        .label {
+            font-size: 10px;
+            text-anchor: middle;
+        }
+
+        .group-label {
+            font-size: 16px;
+            font-weight: bold;
+            fill: #333;
+            text-anchor: middle;
+        }
+
+        .group-arc {
+            fill: none;
+            stroke: #333;
+            stroke-width: 2;
+        }
+
+        .center-text {
+            font-size: 20px;
+            font-weight: bold;
+            text-anchor: middle;
+            fill: #333;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 6px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border-radius: 4px;
+            pointer-events: none;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chart"></div>
+    <div class="tooltip"></div>
+    <script>
+        const groupMapping = {
+            "NT": ["INTJ", "INTP", "ENTJ", "ENTP"],
+            "SP": ["ISTP", "ISFP", "ESTP", "ESFP"],
+            "SJ": ["ISTJ", "ISFJ", "ESTJ", "ESFJ"],
+            "NF": ["INFJ", "INFP", "ENFJ", "ENFP"]
+        };
+
+        let allData = [];  // 用来存储一次性加载的CSV数据
+        let allHeaders = []; // 用来存储CSV文件中的列名
+
+        // 只加载一次CSV数据
+        function loadCSVData() {
+            d3.csv("merged_personality.csv", function (d) {
+                // 获取第一列的列名并修改为 "country"
+                const firstColumn = Object.keys(d)[0];
+                d.country = d[firstColumn];  // 将第一列赋值给 "country" 属性
+                //delete d[firstColumn];       // 删除原本的第一列，避免重复
+                return d;  // 返回处理过的数据行
+            }).then((data) => {
+                allData = data; // 将 CSV 数据存储到全局变量
+                allHeaders = Object.keys(data[0]).slice(1); // 第一列是国家名，其他列是人格类型
+
+                console.log("加载的数据：", allData); // 输出加载的数据
+                console.log("加载的列名：", allHeaders); // 输出所有列名
+
+                // 初始化图表，显示默认国家的数据（例如，China）
+                initializeChart("China");
+            });
+
+
+
+            // return d3.csv("merged_personality.csv").then((data) => {
+            //     allData = data; // 存储CSV数据到全局变量
+            //     allHeaders = Object.keys(data[0]).slice(1); // 假设第一列是国家名，其他列为人格类型
+            //     // 初始化绘制图表
+            //     initializeChart("China"); // 默认展示Afghanistan的数据
+            // });
+        }
+
+        // 根据国家名称过滤数据并绘制图表
+        function loadDataForCountry(countryName) {
+            const countryData = allData.find(d => d.country === countryName);
+
+            if (!countryData) {
+                console.error(`未找到国家数据: ${countryName}`);
+                return [];
+            }
+
+            const formattedData = [];
+            allHeaders.forEach((header) => {
+                if (header === 'country') {
+                    return;  // 使用 return 跳过当前迭代，相当于 continue
+                }
+                // 查找人格类型属于哪个组
+                let group = "";
+                for (const [key, value] of Object.entries(groupMapping)) {
+                    if (value.includes(header)) {
+                        group = key;
+                        break;
+                    }
+                }
+
+                formattedData.push({
+                    name: header,
+                    value: +countryData[header],  // 转换为数值类型
+                    group: group  // 根据分组添加分组信息
+                });
+            });
+
+            return formattedData;
+        }
+
+        // 绘制图表
+        function initializeChart(countryName) {
+            const data = loadDataForCountry(countryName);
+            if (data.length == 0) { return; }
+
+            const width = 360, height = 350, innerRadius = 75, outerRadius = 150;
+            const groupGap = Math.PI / 50; // 组之间的间隙角度
+            const groups = Array.from(d3.group(data, d => d.group));
+
+            // 打印分组结果
+            // console.log(groups);
+            const totalBars = data.length + 2;  // 计算条形数
+            // console.log(totalBars);
+            const barWidth = (2 * Math.PI) / (totalBars);//手动计算18
+
+            // 按分组指定颜色
+            const color = d3.scaleOrdinal()
+                .domain(Object.keys(groupMapping))
+                .range(["#826497", "#DDAF51", "#5897B1", "#56A178"]);  // 每个分组一个颜色
+
+            // 清除之前的图表内容
+            d3.select("#chart").selectAll("*").remove();
+
+            const svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", `translate(${width / 2}, ${height / 2})`);
+
+            const rScale = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.value)])
+                .range([innerRadius, outerRadius]);
+
+            const tooltip = d3.select(".tooltip");
+            // 添加国家名到图的中央
+            svg.append("text")
+                .attr("class", "center-text")
+                .attr("x", 0)
+                .attr("y", 0)
+                .text(countryName);
+
+            // 绘制柱形和标签
+            // 绘制柱形和标签
+            let startIndex = 0;
+            groups.forEach(([group, items]) => {
+                items.forEach((d) => {
+                    const startAngle = startIndex * barWidth;
+                    const endAngle = startAngle + barWidth;
+
+                    const arc0 = d3.arc()
+                        .innerRadius(innerRadius)
+                        .outerRadius(innerRadius)
+                        .startAngle(startAngle)
+                        .endAngle(endAngle);
+
+                    const arc = d3.arc()
+                        .innerRadius(innerRadius)
+                        .outerRadius(rScale(d.value))
+                        .startAngle(startAngle)
+                        .endAngle(endAngle);
+
+                    const hoverArc = d3.arc()
+                        .innerRadius(innerRadius)
+                        .outerRadius(rScale(d.value))
+                        .startAngle(startAngle)
+                        .endAngle(endAngle);
+
+                    const path = svg.append("path")
+                        .attr("class", "bar")
+                        .attr("fill", color(group))  // 设置条形图的颜
+                        .attr("d", arc0);
+                        //.style("stroke", "#ECE6D8") // 设置黑色边框
+                    //.style("stroke-width", 3);  // 设置边框宽度;  // 初始路径，使用arc生成.
+
+                    // path.transition()  // 启动过渡动画
+                    //     .duration(1000)  // 过渡动画的持续时间为1秒
+                    //     .ease(d3.easeCubicOut)  // 使用缓动函数，使动画效果更平滑
+                    //     .attr("d", arc);
+                    //     //.ease(d3.easeLinear);
+
+                    path.transition()
+                        .duration(1000)
+                        .attrTween("d", function () {
+                            const interpolate = d3.interpolate(innerRadius, rScale(d.value));
+                            return function (t) {
+                                const updatedArc = d3.arc()
+                                    .innerRadius(innerRadius)
+                                    .outerRadius(interpolate(t))
+                                    .startAngle(startAngle)
+                                    .endAngle(endAngle);
+                                return updatedArc();
+                            };
+
+                        })
+                        .on("start", function () {
+                            // 在过渡动画开始时，添加标签
+                            const angle = (startAngle + endAngle) / 2 - Math.PI / 2;
+                            const x = Math.cos(angle) * (rScale(d.value) + 15);
+                            const y = Math.sin(angle) * (rScale(d.value) + 15);
+
+                            // 创建标签元素
+                            const label = svg.append("text")
+                                .attr("class", "label")
+                                .attr("x", x)
+                                .attr("y", y)
+                                .attr("opacity", 0)  // 初始时标签是透明的
+                                .attr("transform", () => {
+                                    // 如果角度位于左侧，将旋转角度增加 180 度
+                                    const rotation = angle > Math.PI / 2 || angle < -Math.PI / 2
+                                        ? angle * 180 / Math.PI + 180
+                                        : angle * 180 / Math.PI;
+                                    return `rotate(${rotation}, ${x}, ${y})`;
+                                })
+                                .attr("text-anchor", () => {
+                                    // 左侧标签对齐方式为 "end"，右侧标签为 "start"
+                                    return angle > Math.PI / 2 || angle < -Math.PI / 2 ? "end" : "start";
+                                })
+                                .style("font-weight", "bold")  // 设置字体加粗
+                                .text(d.name);  // 设置文本为数据名称
+
+                            // 为标签添加透明度渐变动画
+                            label.transition()
+                                .duration(1000)  // 设置标签动画持续时间
+                                .attr("opacity", 1);  // 标签渐变到完全可见
+                        });
+
+
+                    path.on("mouseover", (event) => {
+                        tooltip
+                            .style("opacity", 1)
+                            .html(`<strong>${d.name}</strong>: ${d.value}`)
+                            .style("left", `${event.pageX + 10}px`)
+                            .style("top", `${event.pageY + 10}px`)
+
+                        path.transition().duration(200)
+                            .style("stroke", "#f5676d")
+                            //  .style("box-sizing","border-box")
+                            .on("start", function () {
+                                // 将路径提升到最上层
+                                d3.select(this).raise();
+                            });
+
+
+                    })
+                        .on("mousemove", (event) => {
+                            tooltip
+                                .style("left", `${event.pageX + 10}px`)
+                                .style("top", `${event.pageY + 10}px`);
+                        })
+                        .on("mouseout", () => {
+                            tooltip.style("opacity", 0);
+                            // path.transition().duration(200).attr("d", arc); // 恢复原状
+
+                            // 恢复原状，去掉边框
+                            path.transition().duration(200)
+                                .style("stroke", "#ECE6D8");
+
+                            //.attr("d", arc);  // 恢复原始路径（即不受stroke影响的路径）  // 恢复边框宽度为 0
+                        });
+
+
+                    startIndex++;
+                });
+
+                // 组内分隔弧线
+                const groupArc = d3.arc()
+                    .innerRadius(innerRadius - 5)
+                    .outerRadius(innerRadius - 3)
+                    .startAngle(startIndex * barWidth - items.length * barWidth)
+                    .endAngle(startIndex * barWidth);
+
+                svg.append("path")
+                    .attr("class", "group-arc")
+                    .attr("d", groupArc);
+
+                // 添加分组标签
+                // const midAngle = (startIndex - items.length / 2) * barWidth - Math.PI / 2;
+                // const labelX = Math.cos(midAngle) * (innerRadius - 20);
+                // const labelY = Math.sin(midAngle) * (innerRadius - 20);
+
+                // svg.append("text")
+                //     .attr("class", "group-label")
+                //     .attr("x", labelX)
+                //     .attr("y", labelY)
+                //     .text(group);
+
+                startIndex += 0.5; // 增加分组间的间隙
+            });
+        }
+
+        // 页面加载时先导入CSV数据
+        loadCSVData();
+
+        // 监听国家名称的变化并重新绘制图表
+        window.onload = function () {
+            window.addEventListener('message', function (event) {
+                const countryName = event.data; // 假设消息是国家名称
+                console.log("径向图收到的国家信息:", countryName);
+                initializeChart(countryName);
+            });
+        }
+    </script>
+</body>
+
+</html>

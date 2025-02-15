@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Narcissism Pyramid</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet"> <!-- 引入 Lobster 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .chart-container {
+            width: 700px;
+            margin: auto;
+            position: relative;
+        }
+
+        .pyramid {
+            fill-opacity: 0.8;
+            cursor: pointer;
+            transition: fill-opacity 0.3s;
+        }
+
+        .pyramid:hover {
+            fill-opacity: 1;
+        }
+
+        .label {
+            font-size: 14px;
+            fill: #fff;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .mbti-image-left {
+            position: absolute;
+            width: 30px; /* 缩小图片尺寸 */
+            transform: translateY(-50%);
+        }
+        .mbti-image-right {
+            position: absolute;
+            width: 30px; /* 缩小图片尺寸 */
+            transform: translateY(-50%);
+        }
+
+        .title {
+            font-family: 'Lobster', cursive; /* 使用 Lobster 字体 */
+            font-size: 30px; /* 设置标题大小 */
+            color: #4A90E2; /* 设置字体颜色 */
+            position: absolute;
+            top: 0px; /* 向下偏移 */
+            left: 140px; /* 向右偏移 */
+            transform: translate(50%, 50%); /* 确保标题居中 */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* 添加文字阴影效果 */
+        }
+    </style>
+</head>
+<body>
+    <div class="title">MBTI自恋指数金字塔</div> <!-- 添加标题 -->
+
+    <div class="chart-container">
+        <svg id="pyramid-chart" width="750" height="500"></svg>
+    </div>
+
+    <script>
+        // 使用新的 Roboto 字体
+        const data = [
+            { type: "INTJ", narcissism: 90, image: "images/INTJ.png", detailPage: "gaipinci/sentiment_analysis_INTJ_bar.html", group: "purple" },
+            { type: "ENTJ", narcissism: 85, image: "images/ENTJ.png", detailPage: "ENTJ.html", group: "purple" },
+            { type: "INFJ", narcissism: 80, image: "images/INFJ.png", detailPage: "INFJ.html", group: "purple" },
+            { type: "ENFJ", narcissism: 75, image: "images/ENFJ.png", detailPage: "ENFJ.html", group: "purple" },
+            { type: "INTP", narcissism: 70, image: "images/INTP.png", detailPage: "INTP.html", group: "green" },
+            { type: "ENTP", narcissism: 65, image: "images/ENTP.png", detailPage: "ENTP.html", group: "green" },
+            { type: "INFP", narcissism: 60, image: "images/INFP.png", detailPage: "INFP.html", group: "green" },
+            { type: "ENFP", narcissism: 55, image: "images/ENFP.png", detailPage: "ENFP.html", group: "green" },
+            { type: "ISTJ", narcissism: 50, image: "images/ISTJ.png", detailPage: "ISTJ.html", group: "blue" },
+            { type: "ESTJ", narcissism: 45, image: "images/ESTJ.png", detailPage: "ESTJ.html", group: "blue" },
+            { type: "ISFJ", narcissism: 40, image: "images/ISFJ.png", detailPage: "ISFJ.html", group: "blue" },
+            { type: "ESFJ", narcissism: 35, image: "images/ESFJ.png", detailPage: "ESFJ.html", group: "blue" },
+            { type: "ISTP", narcissism: 30, image: "images/ISTP.png", detailPage: "ISTP.html", group: "yellow" },
+            { type: "ESTP", narcissism: 25, image: "images/ESTP.png", detailPage: "ESTP.html", group: "yellow" },
+            { type: "ISFP", narcissism: 20, image: "images/ISFP.png", detailPage: "ISFP.html", group: "yellow" },
+            { type: "ESFP", narcissism: 15, image: "images/ESFP.png", detailPage: "ESFP.html", group: "yellow" }
+        ];
+
+        const svg = d3.select("#pyramid-chart");
+        const width = svg.attr("width");
+        const height = svg.attr("height");
+
+        // 根据组颜色映射
+        const colorMap = {
+            "purple": "#826497",
+            "green": "#56A178",
+            "yellow": "#DDAF51",
+            "blue": "#5897B1"
+        };
+
+        const groups = data.length;
+        const segmentHeight = height * 0.65 / groups;
+
+        // 绘制金字塔的矩形并使用 transform 向下偏移
+        svg.selectAll(".pyramid")
+            .data(data)
+            .enter()
+            .append("polygon")
+            .attr("class", "pyramid")
+            .attr("points", (d, i) => {
+                const x0 = (width / 2) - (d.narcissism * 3);
+                const x1 = (width / 2) + (d.narcissism * 3);
+                const y = i * segmentHeight;
+                const yNext = (i + 1) * segmentHeight;
+                return `${x0},${y} ${x1},${y} ${x1},${yNext} ${x0},${yNext}`;
+            })
+            .attr("fill", d => colorMap[d.group])
+            .attr("transform", "translate(0, 80)") // 整体下移 60px
+            .on("click", d => {
+                window.location.href = d.detailPage; // 假设 detailPage 是您的 HTML 页面链接
+            })
+            .on("mouseover", function() {
+                d3.select(this).transition().duration(300).attr("fill-opacity", 1);
+            })
+            .on("mouseout", function() {
+                d3.select(this).transition().duration(300).attr("fill-opacity", 0.8);
+            });
+
+        // 添加标签并向下偏移
+        svg.selectAll(".label")
+            .data(data)
+            .enter()
+            .append("text")
+            .attr("class", "label")
+            .attr("x", width / 2)
+            .attr("y", (d, i) => (i + 0.5) * segmentHeight + 80)  // 向下偏移
+            .text(d => `${d.type}`)
+            .attr("font-weight", "bold");
+
+        // 附加 MBTI 小人图片并确保对齐到文字的左边
+        d3.select(".chart-container").selectAll(".mbti-image-left")
+            .data(data)
+            .enter()
+            .append("img")
+            .attr("class", "mbti-image-left")
+            .attr("src", d => d.image)
+            .style("top", (d, i) => `${(i + 0.5) * segmentHeight + 80}px`)  // 动态计算top并向下偏移
+            .style("left", (d, i) => {
+                const x0 = (width / 2) - (d.narcissism * 3);  // 计算金字塔段的左边缘
+                return `${x0 - 60}px`;
+            });
+
+        d3.select(".chart-container").selectAll(".mbti-image-right")
+            .data(data)
+            .enter()
+            .append("img")
+            .attr("class", "mbti-image-right")
+            .attr("src", d => d.image)
+            .style("top", (d, i) => `${(i + 0.5) * segmentHeight + 80}px`)  // 动态计算top并向下偏移
+            .style("left", (d, i) => {
+                const x1 = (width / 2) + (d.narcissism * 3);  // 计算金字塔段的右边缘
+                return `${x1 + 30}px`;
+            });
+    </script>
+</body>
+</html>
